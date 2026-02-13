@@ -47,7 +47,7 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene("Gameplay");
     }
 
-    private void EndGame()
+    public void EndGame()
     {
         isGameActive = false;
         SceneManager.LoadScene("Reward");
@@ -65,5 +65,6 @@ public class GameManager : MonoBehaviour
     }
 
     public float GetTimeRemaining() => timeRemaining;
+    public bool IsGameActive() => isGameActive;
 }
 
