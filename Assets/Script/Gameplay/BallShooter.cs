@@ -7,6 +7,9 @@ public class BallShooter : MonoBehaviour
     [Header("Backboard Settings")]
     [SerializeField] private float highBackboardOffset = 0.5f;
 
+    [Header("Physics Settings")]
+    [SerializeField] private float arcHeight = 1.5f;
+
     private Rigidbody ballRigidbody;
 
     private void Awake()
@@ -14,7 +17,7 @@ public class BallShooter : MonoBehaviour
         ballRigidbody = GetComponent<Rigidbody>();
     }
 
-    public void ShootBall(Vector3 basketTarget, Vector3 backboardTarget, float arcHeight, ShotPowerType powerType)
+    public void ShootBall(Vector3 basketTarget, Vector3 backboardTarget, ShotPowerType powerType)
     {
         if (ballRigidbody == null) return;
 
@@ -27,7 +30,7 @@ public class BallShooter : MonoBehaviour
         ballRigidbody.velocity = finalVelocity;
     }
 
-    public Vector3 GetProjectedVelocity(Vector3 startPos, Vector3 basketTarget, Vector3 backboardTarget, float arcHeight, ShotPowerType powerType)
+    public Vector3 GetProjectedVelocity(Vector3 startPos, Vector3 basketTarget, Vector3 backboardTarget, ShotPowerType powerType)
     {
         Vector3 targetPosition = DetermineTarget(basketTarget, backboardTarget, powerType);
         Vector3 perfectVelocity = CalculateVelocity(startPos, targetPosition, arcHeight);

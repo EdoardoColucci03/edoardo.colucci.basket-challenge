@@ -2,6 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// TOOL DI TEST - Non utilizzato nel gameplay di produzione.
+/// 
+/// Questo script permette di testare rapidamente tutti i tipi di tiro
+/// utilizzando scorciatoie da tastiera (1-7).
+/// 
+/// Utilizzo:
+/// - Bilanciamento parametri fisici dei tiri
+/// - Debug rapido della fisica
+/// 
+/// Per il gameplay vero, vedere PlayerController.cs
+/// </summary>
 public class BallPhysicsTest : MonoBehaviour
 {
     [Header("References")]
@@ -9,9 +21,6 @@ public class BallPhysicsTest : MonoBehaviour
     [SerializeField] private Transform ballSpawnPoint;
     [SerializeField] private Transform basketTarget;
     [SerializeField] private Transform backboardTarget;
-
-    [Header("Physics Settings")]
-    [SerializeField] private float arcHeight = 3f;
 
     [Header("Trajectory Visualization")]
     [SerializeField] private TrajectoryVisualizer trajectoryVisualizer;
@@ -52,6 +61,11 @@ public class BallPhysicsTest : MonoBehaviour
         {
             TestShot(ShotPowerType.TooStrong, "TOO STRONG");
         }
+
+        if (Input.GetKeyDown(KeyCode.Alpha7))
+        {
+            TestShot(ShotPowerType.NearGood, "NEAR GOOD");
+        }
     }
 
     private void TestShot(ShotPowerType powerType, string shotName)
@@ -76,7 +90,6 @@ public class BallPhysicsTest : MonoBehaviour
             ballSpawnPoint.position,
             basketTarget.position,
             backboardTarget.position,
-            arcHeight,
             powerType
         );
 
@@ -103,10 +116,8 @@ public class BallPhysicsTest : MonoBehaviour
         ballShooter.ShootBall(
             basketTarget.position,
             backboardTarget.position,
-            arcHeight,
             powerType
         );
-
     }
 
     private void SpawnBall()
