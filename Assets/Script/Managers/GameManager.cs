@@ -7,8 +7,10 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    [Header("Game Settings")]
     [SerializeField] private float gameDuration = 60f;
 
+    private int totalScore = 0;
     private float timeRemaining;
     private bool isGameActive;
 
@@ -42,8 +44,27 @@ public class GameManager : MonoBehaviour
     public void StartGame()
     {
         timeRemaining = gameDuration;
+        totalScore = 0;
         isGameActive = true;
         SceneManager.LoadScene("Gameplay");
+    }
+
+    public void AddScore(int points)
+    {
+        if (!isGameActive) return;
+
+        totalScore += points;
+        Debug.Log($"<color=green>+{points} points! Total: {totalScore}</color>");
+    }
+
+    public void OnPerfectShot()
+    {
+        AddScore(3);
+    }
+
+    public void OnNormalBasket()
+    {
+        AddScore(2);
     }
 
     public void EndGame()
@@ -64,6 +85,6 @@ public class GameManager : MonoBehaviour
     }
 
     public float GetTimeRemaining() => timeRemaining;
-    public bool IsGameActive() => isGameActive;
+    public int GetTotalScore() => totalScore;
 }
 

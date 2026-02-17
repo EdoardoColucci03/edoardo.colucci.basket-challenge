@@ -17,9 +17,37 @@ public class BasketDetector : MonoBehaviour
 
             if (ballRb != null && ballRb.velocity.y < minVelocityY)
             {
-                Debug.Log("Ball entered basket");
+                DetermineShotType();
             }
         }
+    }
+
+    private void DetermineShotType()
+    {
+        string shotType;
+        int points;
+
+        if (!hasHitRim && !hasHitBackboard)
+        {
+            shotType = "PERFECT SHOT!";
+            points = 3;
+            GameManager.Instance?.OnPerfectShot();
+        }
+        else if (hasHitBackboard && !hasHitRim)
+        {
+            shotType = "BACKBOARD BASKET!";
+            points = 2;
+            GameManager.Instance?.OnNormalBasket();
+        }
+        else
+        {
+            shotType = "BASKET!";
+            points = 2;
+            GameManager.Instance?.OnNormalBasket();
+        }
+
+        Debug.Log($"<color=yellow>{shotType} +{points} points</color>");
+        ResetShotState();
     }
 
     public void OnRimHit()
@@ -32,4 +60,9 @@ public class BasketDetector : MonoBehaviour
         hasHitBackboard = true;
     }
 
+    private void ResetShotState()
+    {
+        hasHitRim = false;
+        hasHitBackboard = false;
+    }
 }
