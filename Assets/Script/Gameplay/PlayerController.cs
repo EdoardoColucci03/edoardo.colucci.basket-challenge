@@ -8,9 +8,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GameObject ballPrefab;
     [SerializeField] private Transform ballSpawnPoint;
 
+    [Header("Player Position Management")]
+    [SerializeField] private SpawnPositionManager spawnManager;
+    [SerializeField] private Transform playerTransform;
+
     [Header("Basket Reference")]
     [SerializeField] private Transform basketTarget;
     [SerializeField] private Transform backboardTarget;
+    [SerializeField] private BasketDetector basketDetector;
+
+    [Header("Camera")]
+    [SerializeField] private CameraFollow basketballCamera;
 
     [Header("Auto Reset Settings")]
     [SerializeField] private float autoResetDelay = 2f;
@@ -25,6 +33,7 @@ public class PlayerController : MonoBehaviour
     private bool hasBall = true;
     private bool isAiming = false;
     private Coroutine autoResetCoroutine;
+    private Vector3 initialBackboardPosition;
 
     public bool HasBall => hasBall;
     public bool IsAiming => isAiming;
@@ -32,6 +41,14 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         ValidateReferences();
+
+        if (backboardTarget != null)
+        {
+            initialBackboardPosition = backboardTarget.position;
+            Debug.Log($"<color=cyan>[BackboardTarget] Initial position saved: {initialBackboardPosition}</color>");
+        }
+
+        MovePlayerToPosition();
         SpawnBall();
     }
 
@@ -51,11 +68,23 @@ public class PlayerController : MonoBehaviour
         if (ballSpawnPoint == null)
             Debug.LogError($"[PlayerController] Ball Spawn Point not assigned!", this);
 
+        if (spawnManager == null)
+            Debug.LogError($"[PlayerController] SpawnPositionManager not assigned!", this);
+
+        if (playerTransform == null)
+        {
+            Debug.LogWarning($"[PlayerController] Player Transform not assigned!");
+            playerTransform = transform;
+        }
+
         if (basketTarget == null)
             Debug.LogError($"[PlayerController] Basket Target not assigned!", this);
 
         if (backboardTarget == null)
             Debug.LogError($"[PlayerController] Backboard Target not assigned!", this);
+
+        if (basketballCamera == null)
+            Debug.LogWarning($"[PlayerController] BasketballCamera not assigned!");
 
         if (powerBarUI == null)
             Debug.LogError($"[PlayerController] PowerBarUI not assigned!", this);
@@ -65,11 +94,14 @@ public class PlayerController : MonoBehaviour
 
         if (trajectoryVisualizer == null)
             Debug.LogError($"[PlayerController] TrajectoryVisualizer not assigned!", this);
+
+        if (basketDetector == null)
+            Debug.LogWarning($"[PlayerController] BasketDetector not assigned!", this);
     }
 
     private void UpdateBallPosition()
     {
-        if (hasBall && currentBall != null)
+        if (hasBall && currentBall != null && ballSpawnPoint != null)
         {
             currentBall.transform.position = ballSpawnPoint.position;
             currentBall.transform.rotation = ballSpawnPoint.rotation;
@@ -78,7 +110,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleAimingInput()
     {
-        if (Input.GetMouseButtonDown(0) && hasBall && autoResetCoroutine == null)
+        if (Input.GetMouseButtonDown(0) && hasBall && !isAiming && autoResetCoroutine == null)
         {
             StartAiming();
         }
@@ -115,6 +147,8 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateTrajectoryPreview(float power)
     {
+        if (ballSpawnPoint == null) return;
+
         ShotPowerType powerType = powerBarUI.GetShotPowerType(power);
 
         Vector3 projectedVelocity = ballShooter.GetProjectedVelocity(
@@ -141,12 +175,18 @@ public class PlayerController : MonoBehaviour
         hasBall = false;
         isAiming = false;
 
+        basketDetector?.SetLastShotType(powerType);
+
         ballShooter.ShootBall(basketTarget.position, backboardTarget.position, powerType);
 
-        ScheduleAutoReset();
+        if (basketballCamera != null)
+        {
+            basketballCamera.StartBallCam();
+        }
+
         CleanupAfterShot();
 
-        Debug.Log($"<color=cyan>[PlayerController] Shot | Type: {powerType} | Swipe: {finalPower:F2}</color>");
+        Debug.Log($"<color=orange>[PlayerController] Shot from {playerTransform.position} | Type: {powerType} | Swipe: {finalPower:F2}</color>");
     }
 
     private void CancelShot()
@@ -170,7 +210,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private System.Collections.IEnumerator AutoResetRoutine()
+    private IEnumerator AutoResetRoutine()
     {
         yield return new WaitForSeconds(autoResetDelay);
         ResetShot();
@@ -184,18 +224,71 @@ public class PlayerController : MonoBehaviour
             autoResetCoroutine = null;
         }
 
+        if (basketballCamera != null)
+        {
+            basketballCamera.StopBallCam();
+        }
+
         if (currentBall != null)
         {
             Destroy(currentBall);
         }
 
+        MovePlayerToPosition();
         SpawnBall();
         isAiming = false;
         swipeDetector.ResetSwipe();
         powerBarUI.UpdatePower(0);
         trajectoryVisualizer.HideTrajectory();
 
-        Debug.Log($"<color=yellow>[{nameof(PlayerController)}] Ball Reset</color>");
+        Debug.Log($"<color=orange>[PlayerController] Ball Reset - Player moved to new position</color>");
+    }
+
+    private void MovePlayerToPosition()
+    {
+        if (spawnManager == null || playerTransform == null) return;
+
+        Transform nextPosition = spawnManager.GetNextSpawnPosition();
+
+        playerTransform.position = nextPosition.position;
+
+        if (basketTarget != null)
+        {
+            Vector3 directionToBasket = basketTarget.position - playerTransform.position;
+            directionToBasket.y = 0;
+
+            if (directionToBasket != Vector3.zero)
+            {
+                playerTransform.rotation = Quaternion.LookRotation(directionToBasket);
+            }
+        }
+
+        UpdateBackboardTarget();
+
+        if (basketballCamera != null)
+        {
+            basketballCamera.UpdateCameraPosition();
+        }
+
+        Debug.Log($"<color=orange>[PlayerController] Player at {nextPosition.name} facing basket</color>");
+    }
+
+    private void UpdateBackboardTarget()
+    {
+        if (basketTarget == null || backboardTarget == null || playerTransform == null) return;
+
+        Vector3 playerPos = playerTransform.position;
+        Vector3 basketPos = basketTarget.position;
+
+        float lateralOffset = (playerPos.x - basketPos.x) * 0.3f;
+        lateralOffset = Mathf.Clamp(lateralOffset, -0.3f, 0.3f);
+
+        Vector3 targetPosition = initialBackboardPosition;
+        targetPosition.x += lateralOffset;
+
+        backboardTarget.position = targetPosition;
+
+        Debug.Log($"<color=cyan>[BackboardTarget] PlayerX: {playerPos.x:F2} | BasketX: {basketPos.x:F2} | Offset: {lateralOffset:F2} | New Pos: {targetPosition}</color>");
     }
 
     private void SpawnBall()
@@ -219,6 +312,11 @@ public class PlayerController : MonoBehaviour
             rb.isKinematic = true;
         }
 
+        if (basketballCamera != null)
+        {
+            basketballCamera.SetBall(currentBall.transform);
+        }
+
         hasBall = true;
     }
 
@@ -227,15 +325,26 @@ public class PlayerController : MonoBehaviour
         if (basketTarget != null)
         {
             Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(basketTarget.position, 0.15f);
+            Gizmos.DrawWireSphere(basketTarget.position, 0.2f);
             Gizmos.DrawLine(basketTarget.position, basketTarget.position + Vector3.up * 0.5f);
         }
 
         if (backboardTarget != null)
         {
             Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(backboardTarget.position, 0.15f);
-            Gizmos.DrawLine(backboardTarget.position, backboardTarget.position + Vector3.up * 0.5f);
+            Gizmos.DrawWireSphere(backboardTarget.position, 0.25f);
+
+            if (basketTarget != null)
+            {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawLine(backboardTarget.position, basketTarget.position);
+            }
+        }
+
+        if (ballSpawnPoint != null)
+        {
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(ballSpawnPoint.position, 0.1f);
         }
     }
 }

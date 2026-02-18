@@ -22,8 +22,9 @@ public class GroundDetector : MonoBehaviour
         if (!collision.gameObject.CompareTag("Ball"))
             return;
 
-        Debug.Log($"Ball hit ground");
+        Debug.Log("Ball hit ground");
         playerController?.ScheduleAutoReset();
+        Camera.main.GetComponent<CameraFollow>()?.StopBallCam();    
     }
 }
 
