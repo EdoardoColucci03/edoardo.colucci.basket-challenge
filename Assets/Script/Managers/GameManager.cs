@@ -10,9 +10,22 @@ public class GameManager : MonoBehaviour
     [Header("Game Settings")]
     [SerializeField] private float gameDuration = 60f;
 
+    [Header("Backboard Bonus Settings")]
+    [SerializeField] private int minShotsBeforeBonus = 5;
+    [SerializeField] private int maxShotsBeforeBonus = 8;
+    [SerializeField] private float bonusDuration = 8f;
+
     private int totalScore = 0;
     private float timeRemaining;
     private bool isGameActive;
+
+    private int shotsFiredCount = 0;
+    private int nextBonusAtShot = 0;
+
+    private BackboardBonus activeBonus = null;
+    private bool isBonusActive = false;
+    private float bonusTimeLeft = 0f;
+    private Coroutine bonusExpireCoroutine;
 
     private void Awake()
     {
@@ -39,20 +52,60 @@ public class GameManager : MonoBehaviour
             timeRemaining = 0f;
             EndGame();
         }
+
+        if (isBonusActive)
+            bonusTimeLeft -= Time.deltaTime;
     }
 
     public void StartGame()
     {
         timeRemaining = gameDuration;
         totalScore = 0;
+        shotsFiredCount = 0;
         isGameActive = true;
+        ClearBonus();
+        ScheduleNextBonus();
         SceneManager.LoadScene("Gameplay");
+    }
+
+    public void EndGame()
+    {
+        isGameActive = false;
+        ClearBonus();
+        SceneManager.LoadScene("Reward");
+    }
+
+    public void ReturnToMainMenu()
+    {
+        isGameActive = false;
+        ClearBonus();
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    public void PlayAgain() => StartGame();
+
+    public void OnShotFired()
+    {
+        if (!isGameActive) return;
+
+        shotsFiredCount++;
+
+        Debug.Log($"<color=cyan>[GM] Shot fired #{shotsFiredCount} | Next bonus at #{nextBonusAtShot}</color>");
+    }
+
+    public void OnBallReady()
+    {
+        if (!isGameActive) return;
+
+        if (isBonusActive) return;
+
+        if (shotsFiredCount >= nextBonusAtShot)
+            SpawnBonus();
     }
 
     public void AddScore(int points)
     {
         if (!isGameActive) return;
-
         totalScore += points;
         Debug.Log($"<color=green>+{points} points! Total: {totalScore}</color>");
     }
@@ -67,24 +120,67 @@ public class GameManager : MonoBehaviour
         AddScore(2);
     }
 
-    public void EndGame()
+    public void OnBackboardBasket()
     {
-        isGameActive = false;
-        SceneManager.LoadScene("Reward");
+        if (isBonusActive)
+        {
+            int bonusPoints = activeBonus.Points;
+            AddScore(2 + bonusPoints);
+            Debug.Log($"<color=orange>BACKBOARD BONUS collected! +{bonusPoints} | Rarity: {activeBonus.Rarity}</color>");
+            ClearBonus();
+        }
+        else
+        {
+            AddScore(2);
+        }
     }
 
-    public void ReturnToMainMenu()
+    private void ScheduleNextBonus()
     {
-        isGameActive = false;
-        SceneManager.LoadScene("MainMenu");
+        int interval = Random.Range(minShotsBeforeBonus, maxShotsBeforeBonus + 1);
+        nextBonusAtShot = shotsFiredCount + interval;
+        Debug.Log($"<color=yellow>[GM] Next bonus at shot #{nextBonusAtShot} (in {interval} shots)</color>");
     }
 
-    public void PlayAgain()
+    private void SpawnBonus()
     {
-        StartGame();
+        if (bonusExpireCoroutine != null)
+            StopCoroutine(bonusExpireCoroutine);
+
+        activeBonus = BackboardBonus.GetRandom();
+        isBonusActive = true;
+        bonusTimeLeft = bonusDuration;
+
+        ScheduleNextBonus();
+
+        Debug.Log($"<color=yellow>[GM] BONUS spawned: {activeBonus.Rarity} +{activeBonus.Points} | Expires in {bonusDuration}s</color>");
+
+        bonusExpireCoroutine = StartCoroutine(BonusExpireRoutine());
+    }
+
+    private IEnumerator BonusExpireRoutine()
+    {
+        yield return new WaitForSeconds(bonusDuration);
+        Debug.Log("<color=grey>[GM] Bonus expired</color>");
+        ClearBonus();
+    }
+
+    private void ClearBonus()
+    {
+        if (bonusExpireCoroutine != null)
+        {
+            StopCoroutine(bonusExpireCoroutine);
+            bonusExpireCoroutine = null;
+        }
+
+        activeBonus = null;
+        isBonusActive = false;
+        bonusTimeLeft = 0f;
     }
 
     public float GetTimeRemaining() => timeRemaining;
     public int GetTotalScore() => totalScore;
+    public float BonusTimeLeft => Mathf.Max(bonusTimeLeft, 0f);
+    public bool IsBonusActive => isBonusActive;
+    public BackboardBonus ActiveBonus => activeBonus;
 }
-

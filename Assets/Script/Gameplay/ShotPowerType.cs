@@ -4,6 +4,7 @@ using UnityEngine;
 
 public enum ShotPowerType
 {
+    None,
     Weak,
     Normal,
     NearPerfect,

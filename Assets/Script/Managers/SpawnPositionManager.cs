@@ -33,7 +33,7 @@ public class SpawnPositionManager : MonoBehaviour
                 break;
         }
 
-        Debug.Log($"<color=magenta>[SpawnPositionManager] Next player position: {selectedPosition.name}</color>");
+        //Debug.Log($"<color=magenta>[SpawnPositionManager] Next player position: {selectedPosition.name}</color>");
         return selectedPosition;
     }
 

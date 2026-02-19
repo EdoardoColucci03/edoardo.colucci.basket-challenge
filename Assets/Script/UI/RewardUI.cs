@@ -46,7 +46,7 @@ public class RewardUI : MonoBehaviour
         string message = GetMessageForScore(finalScore);
         messageText.text = message;
 
-        Debug.Log($"<color=yellow>Game ended with score: {finalScore}</color>");
+        //Debug.Log($"<color=yellow>Game ended with score: {finalScore}</color>");
     }
 
     private string GetMessageForScore(int score)

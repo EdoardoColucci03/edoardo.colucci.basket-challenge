@@ -6,6 +6,7 @@ public class BasketDetector : MonoBehaviour
 
     private bool hasHitRim = false;
     private bool hasHitBackboard = false;
+    private bool hasScored = false;
     private ShotPowerType lastShotType;
 
     private CameraFollow cameraFollow;
@@ -18,6 +19,7 @@ public class BasketDetector : MonoBehaviour
     public void SetLastShotType(ShotPowerType powerType)
     {
         lastShotType = powerType;
+        hasScored = false;
     }
 
     public ShotPowerType GetLastShotType()
@@ -29,9 +31,12 @@ public class BasketDetector : MonoBehaviour
     {
         if (other.CompareTag("Ball"))
         {
+            if (hasScored) return;
+
             Rigidbody ballRb = other.GetComponent<Rigidbody>();
             if (ballRb != null && ballRb.velocity.y < minVelocityY)
             {
+                hasScored = true;
                 DetermineShotType();
                 cameraFollow?.StopBallCam();
             }
@@ -49,11 +54,11 @@ public class BasketDetector : MonoBehaviour
             points = 3;
             GameManager.Instance?.OnPerfectShot();
         }
-        else if (lastShotType == ShotPowerType.Good)
+        else if (lastShotType == ShotPowerType.Good && hasHitBackboard)
         {
-            shotType = hasHitBackboard ? "BACKBOARD BASKET!" : "GOOD SHOT!";
+            shotType = "GOOD BACKBOARD BASKET!";
             points = 2;
-            GameManager.Instance?.OnNormalBasket();
+            GameManager.Instance?.OnBackboardBasket();
         }
         else
         {
@@ -66,7 +71,6 @@ public class BasketDetector : MonoBehaviour
         ResetShotState();
     }
 
-
     public void OnRimHit()
     {
         hasHitRim = true;
@@ -77,13 +81,12 @@ public class BasketDetector : MonoBehaviour
     {
         hasHitBackboard = true;
         cameraFollow?.StopBallCam();
-        
     }
 
     private void ResetShotState()
     {
         hasHitRim = false;
         hasHitBackboard = false;
-        lastShotType = ShotPowerType.Normal;
+        lastShotType = ShotPowerType.None;
     }
 }

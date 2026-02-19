@@ -45,7 +45,7 @@ public class PlayerController : MonoBehaviour
         if (backboardTarget != null)
         {
             initialBackboardPosition = backboardTarget.position;
-            Debug.Log($"<color=cyan>[BackboardTarget] Initial position saved: {initialBackboardPosition}</color>");
+            //Debug.Log($"<color=cyan>[BackboardTarget] Initial position saved: {initialBackboardPosition}</color>");
         }
 
         MovePlayerToPosition();
@@ -177,6 +177,8 @@ public class PlayerController : MonoBehaviour
 
         basketDetector?.SetLastShotType(powerType);
 
+        GameManager.Instance?.OnShotFired();
+
         ballShooter.ShootBall(basketTarget.position, backboardTarget.position, powerType);
 
         if (basketballCamera != null)
@@ -186,7 +188,7 @@ public class PlayerController : MonoBehaviour
 
         CleanupAfterShot();
 
-        Debug.Log($"<color=orange>[PlayerController] Shot from {playerTransform.position} | Type: {powerType} | Swipe: {finalPower:F2}</color>");
+        //Debug.Log($"<color=orange>[PlayerController] Shot from {playerTransform.position} | Type: {powerType} | Swipe: {finalPower:F2}</color>");
     }
 
     private void CancelShot()
@@ -236,12 +238,14 @@ public class PlayerController : MonoBehaviour
 
         MovePlayerToPosition();
         SpawnBall();
+        GameManager.Instance?.OnBallReady();
+
         isAiming = false;
         swipeDetector.ResetSwipe();
         powerBarUI.UpdatePower(0);
         trajectoryVisualizer.HideTrajectory();
 
-        Debug.Log($"<color=orange>[PlayerController] Ball Reset - Player moved to new position</color>");
+        //Debug.Log($"<color=orange>[PlayerController] Ball Reset - Player moved to new position</color>");
     }
 
     private void MovePlayerToPosition()
@@ -270,7 +274,7 @@ public class PlayerController : MonoBehaviour
             basketballCamera.UpdateCameraPosition();
         }
 
-        Debug.Log($"<color=orange>[PlayerController] Player at {nextPosition.name} facing basket</color>");
+        //Debug.Log($"<color=orange>[PlayerController] Player at {nextPosition.name} facing basket</color>");
     }
 
     private void UpdateBackboardTarget()
@@ -288,7 +292,7 @@ public class PlayerController : MonoBehaviour
 
         backboardTarget.position = targetPosition;
 
-        Debug.Log($"<color=cyan>[BackboardTarget] PlayerX: {playerPos.x:F2} | BasketX: {basketPos.x:F2} | Offset: {lateralOffset:F2} | New Pos: {targetPosition}</color>");
+        //Debug.Log($"<color=cyan>[BackboardTarget] PlayerX: {playerPos.x:F2} | BasketX: {basketPos.x:F2} | Offset: {lateralOffset:F2} | New Pos: {targetPosition}</color>");
     }
 
     private void SpawnBall()
