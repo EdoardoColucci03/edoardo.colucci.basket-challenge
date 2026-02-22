@@ -53,18 +53,26 @@ public class BasketDetector : MonoBehaviour
             shotType = "PERFECT SHOT!";
             points = 3;
             GameManager.Instance?.OnPerfectShot();
+            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, Color.green);
         }
         else if (lastShotType == ShotPowerType.Good && hasHitBackboard)
         {
-            shotType = "GOOD BACKBOARD BASKET!";
-            points = 2;
+            bool bonusActive = GameManager.Instance != null && GameManager.Instance.IsBonusActive;
+            int bonusPoints = bonusActive ? GameManager.Instance.ActiveBonus.Points : 0;
+            Color bonusColor = bonusActive ? GameManager.Instance.ActiveBonus.Color : new Color(1f, 0.5f, 0f);
+
+            shotType = bonusActive ? "BACKBOARD BONUS!" : "BASKET!";
+            points = 2 + bonusPoints;
+
             GameManager.Instance?.OnBackboardBasket();
+            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, bonusColor);
         }
         else
         {
-            shotType = hasHitRim ? "RIM BASKET!" : "BASKET!";
+            shotType = "BASKET!";
             points = 2;
             GameManager.Instance?.OnNormalBasket();
+            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, new Color(1f, 0.5f, 0f));
         }
 
         Debug.Log($"<color=green>{shotType} +{points} points</color>");

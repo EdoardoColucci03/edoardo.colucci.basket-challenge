@@ -27,6 +27,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PowerBarUI powerBarUI;
     [SerializeField] private SwipeInput swipeDetector;
     [SerializeField] private TrajectoryVisualizer trajectoryVisualizer;
+    [SerializeField] private bool showtrajectoryInRealtime = true;
 
     private GameObject currentBall;
     private BallShooter ballShooter;
@@ -35,8 +36,8 @@ public class PlayerController : MonoBehaviour
     private Coroutine autoResetCoroutine;
     private Vector3 initialBackboardPosition;
 
-    public bool HasBall => hasBall;
-    public bool IsAiming => isAiming;
+    //public bool HasBall => hasBall;
+    //public bool IsAiming => isAiming;
 
     void Start()
     {
@@ -147,7 +148,7 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateTrajectoryPreview(float power)
     {
-        if (ballSpawnPoint == null) return;
+        if (ballSpawnPoint == null || !showtrajectoryInRealtime) return;
 
         ShotPowerType powerType = powerBarUI.GetShotPowerType(power);
 
@@ -194,14 +195,14 @@ public class PlayerController : MonoBehaviour
     private void CancelShot()
     {
         isAiming = false;
-        trajectoryVisualizer.HideTrajectory();
+        if (showtrajectoryInRealtime) trajectoryVisualizer.HideTrajectory();
     }
 
     private void CleanupAfterShot()
     {
         swipeDetector.ResetSwipe();
-        powerBarUI.UpdatePower(0);
-        trajectoryVisualizer.HideTrajectory();
+        powerBarUI.FreezeBar();
+        if (showtrajectoryInRealtime) trajectoryVisualizer.HideTrajectory();
     }
 
     public void ScheduleAutoReset()
@@ -242,7 +243,7 @@ public class PlayerController : MonoBehaviour
 
         isAiming = false;
         swipeDetector.ResetSwipe();
-        powerBarUI.UpdatePower(0);
+        powerBarUI.ResetBar();
         trajectoryVisualizer.HideTrajectory();
 
         //Debug.Log($"<color=orange>[PlayerController] Ball Reset - Player moved to new position</color>");

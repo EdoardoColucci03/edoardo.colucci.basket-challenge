@@ -43,21 +43,21 @@ public class BackboardBonus
     public static BackboardBonus Common() => new BackboardBonus(
         BonusRarity.Common,
         4,
-        new Color(0.9f, 0.9f, 0.2f),   
+        Color.yellow,
         "+4"
     );
 
     public static BackboardBonus Rare() => new BackboardBonus(
         BonusRarity.Rare,
         6,
-        new Color(0.4f, 0.4f, 1.0f),
+        Color.cyan,
         "+6"
     );
 
     public static BackboardBonus Epic() => new BackboardBonus(
         BonusRarity.Epic,
         8,
-        new Color(0.8f, 0.2f, 1.0f),
+        Color.magenta,
         "+8"
     );
 }

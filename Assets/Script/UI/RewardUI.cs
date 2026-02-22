@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -12,63 +11,43 @@ public class RewardUI : MonoBehaviour
     [SerializeField] private Button playAgainButton;
     [SerializeField] private Button mainMenuButton;
 
-    [Header("Score Messages")]
-    [SerializeField] private string excellentMessage = "EXCELLENT!";
-    [SerializeField] private string greatMessage = "GREAT JOB!";
-    [SerializeField] private string goodMessage = "GOOD!";
-    [SerializeField] private string tryAgainMessage = "TRY AGAIN!";
+    [Header("Stars")]
+    [SerializeField] private Image[] stars;
+    [SerializeField] private Color starActiveColor = new Color(1f, 0.82f, 0.40f);
+    [SerializeField] private Color starInactiveColor = new Color(0.2f, 0.2f, 0.27f);
 
     [Header("Score Thresholds")]
-    [SerializeField] private int excellentThreshold = 50;
-    [SerializeField] private int greatThreshold = 30;
-    [SerializeField] private int goodThreshold = 15;
+    [SerializeField] private int[] thresholds = { 10, 20, 35, 50 };
+
+    private readonly string[] titles = { "KEEP TRYING!", "NOT BAD!", "GOOD SHOT!", "SHARPSHOOTER!", "LEGENDARY!" };
 
     private void Start()
     {
         playAgainButton.onClick.AddListener(OnPlayAgainClicked);
         mainMenuButton.onClick.AddListener(OnMainMenuClicked);
-
         DisplayFinalScore();
     }
 
     private void DisplayFinalScore()
     {
-        if (GameManager.Instance == null)
-        {
-            finalScoreText.text = "Score: 0";
-            messageText.text = tryAgainMessage;
-            return;
-        }
+        int score = GameManager.Instance != null ? GameManager.Instance.GetTotalScore() : 0;
 
-        int finalScore = GameManager.Instance.GetTotalScore();
-        finalScoreText.text = $"FINAL SCORE: {finalScore}";
+        finalScoreText.text = score.ToString();
 
-        string message = GetMessageForScore(finalScore);
-        messageText.text = message;
+        int tier = 0;
+        for (int i = 0; i < thresholds.Length; i++)
+            if (score >= thresholds[i]) tier = i + 1;
 
-        //Debug.Log($"<color=yellow>Game ended with score: {finalScore}</color>");
+        messageText.text = titles[tier];
+        SetStars(tier + 1);
     }
 
-    private string GetMessageForScore(int score)
+    private void SetStars(int count)
     {
-        if (score >= excellentThreshold)
-            return excellentMessage;
-        else if (score >= greatThreshold)
-            return greatMessage;
-        else if (score >= goodThreshold)
-            return goodMessage;
-        else
-            return tryAgainMessage;
+        for (int i = 0; i < stars.Length; i++)
+            stars[i].color = i < count ? starActiveColor : starInactiveColor;
     }
 
-    private void OnPlayAgainClicked()
-    {
-        GameManager.Instance?.PlayAgain();
-    }
-
-    private void OnMainMenuClicked()
-    {
-        GameManager.Instance?.ReturnToMainMenu();
-    }
+    private void OnPlayAgainClicked() => GameManager.Instance?.PlayAgain();
+    private void OnMainMenuClicked() => GameManager.Instance?.ReturnToMainMenu();
 }
-

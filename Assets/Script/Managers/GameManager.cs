@@ -107,7 +107,7 @@ public class GameManager : MonoBehaviour
     {
         if (!isGameActive) return;
         totalScore += points;
-        Debug.Log($"<color=green>+{points} points! Total: {totalScore}</color>");
+        //Debug.Log($"<color=green>+{points} points! Total: {totalScore}</color>");
     }
 
     public void OnPerfectShot()
@@ -126,7 +126,7 @@ public class GameManager : MonoBehaviour
         {
             int bonusPoints = activeBonus.Points;
             AddScore(2 + bonusPoints);
-            Debug.Log($"<color=orange>BACKBOARD BONUS collected! +{bonusPoints} | Rarity: {activeBonus.Rarity}</color>");
+            //Debug.Log($"<color=orange>BACKBOARD BONUS collected! +{bonusPoints} | Rarity: {activeBonus.Rarity}</color>");
             ClearBonus();
         }
         else
@@ -153,7 +153,9 @@ public class GameManager : MonoBehaviour
 
         ScheduleNextBonus();
 
-        Debug.Log($"<color=yellow>[GM] BONUS spawned: {activeBonus.Rarity} +{activeBonus.Points} | Expires in {bonusDuration}s</color>");
+        //Debug.Log($"<color=yellow>[GM] BONUS spawned: {activeBonus.Rarity} +{activeBonus.Points} | Expires in {bonusDuration}s</color>");
+
+        GameplayUI.Instance?.ShowBonusNotification($"BACKBOARD BONUS ACTIVE!", activeBonus.Color);
 
         bonusExpireCoroutine = StartCoroutine(BonusExpireRoutine());
     }
@@ -179,8 +181,8 @@ public class GameManager : MonoBehaviour
     }
 
     public float GetTimeRemaining() => timeRemaining;
+    public float GetBonusTimeRemaining() => bonusTimeLeft;
     public int GetTotalScore() => totalScore;
-    public float BonusTimeLeft => Mathf.Max(bonusTimeLeft, 0f);
     public bool IsBonusActive => isBonusActive;
     public BackboardBonus ActiveBonus => activeBonus;
 }
