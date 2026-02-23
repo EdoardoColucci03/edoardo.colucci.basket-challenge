@@ -18,14 +18,20 @@ public class GameManager : MonoBehaviour
     private int totalScore = 0;
     private float timeRemaining;
     private bool isGameActive;
+    private bool waitingForShotToFinish = false;
 
     private int shotsFiredCount = 0;
+    private int aiShotsFiredCount = 0;
     private int nextBonusAtShot = 0;
 
     private BackboardBonus activeBonus = null;
     private bool isBonusActive = false;
     private float bonusTimeLeft = 0f;
     private Coroutine bonusExpireCoroutine;
+
+    private GameMode currentGameMode = GameMode.Practice;
+    private AIDifficulty currentDifficulty = AIDifficulty.Normal;
+    private int aiScore = 0;
 
     private void Awake()
     {
@@ -45,23 +51,55 @@ public class GameManager : MonoBehaviour
         if (!isGameActive || SceneManager.GetActiveScene().name != "Gameplay")
             return;
 
-        timeRemaining -= Time.deltaTime;
-
-        if (timeRemaining <= 0f)
-        {
-            timeRemaining = 0f;
-            EndGame();
-        }
+        if (!waitingForShotToFinish)
+            timeRemaining -= Time.deltaTime;
 
         if (isBonusActive)
             bonusTimeLeft -= Time.deltaTime;
+
+        if (timeRemaining <= 0f && !waitingForShotToFinish)
+        {
+            timeRemaining = 0f;
+
+            if (PlayerController.Instance != null && PlayerController.Instance.IsBallInFlight)
+            {
+                waitingForShotToFinish = true;
+            }
+            else
+            {
+                EndGame();
+            }
+        }
+
+        if (waitingForShotToFinish &&
+            (PlayerController.Instance == null || !PlayerController.Instance.IsBallInFlight))
+        {
+            waitingForShotToFinish = false;
+            EndGame();
+        }
     }
 
-    public void StartGame()
+    public void StartPractice()
+    {
+        currentGameMode = GameMode.Practice;
+        InitGame();
+    }
+
+    public void StartVsAI(AIDifficulty difficulty)
+    {
+        currentGameMode = GameMode.VsAI;
+        currentDifficulty = difficulty;
+        aiScore = 0;
+        InitGame();
+    }
+
+    private void InitGame()
     {
         timeRemaining = gameDuration;
         totalScore = 0;
         shotsFiredCount = 0;
+        aiShotsFiredCount = 0;
+        waitingForShotToFinish = false;
         isGameActive = true;
         ClearBonus();
         ScheduleNextBonus();
@@ -82,24 +120,38 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene("MainMenu");
     }
 
-    public void PlayAgain() => StartGame();
+    public void PlayAgain()
+    {
+        if (currentGameMode == GameMode.VsAI)
+            StartVsAI(currentDifficulty);
+        else
+            StartPractice();
+    }
 
     public void OnShotFired()
     {
         if (!isGameActive) return;
-
         shotsFiredCount++;
+        Debug.Log($"<color=cyan>[GM] Player shot #{shotsFiredCount} | Next bonus at #{nextBonusAtShot}</color>");
+    }
 
-        Debug.Log($"<color=cyan>[GM] Shot fired #{shotsFiredCount} | Next bonus at #{nextBonusAtShot}</color>");
+    public void OnAIShotFired()
+    {
+        if (!isGameActive) return;
+        aiShotsFiredCount++;
+        Debug.Log($"<color=red>[GM] AI shot #{aiShotsFiredCount}</color>");
     }
 
     public void OnBallReady()
     {
         if (!isGameActive) return;
-
         if (isBonusActive) return;
 
-        if (shotsFiredCount >= nextBonusAtShot)
+        int totalShots = currentGameMode == GameMode.VsAI
+            ? shotsFiredCount + aiShotsFiredCount
+            : shotsFiredCount;
+
+        if (totalShots >= nextBonusAtShot)
             SpawnBonus();
     }
 
@@ -107,18 +159,10 @@ public class GameManager : MonoBehaviour
     {
         if (!isGameActive) return;
         totalScore += points;
-        //Debug.Log($"<color=green>+{points} points! Total: {totalScore}</color>");
     }
 
-    public void OnPerfectShot()
-    {
-        AddScore(3);
-    }
-
-    public void OnNormalBasket()
-    {
-        AddScore(2);
-    }
+    public void OnPerfectShot() => AddScore(3);
+    public void OnNormalBasket() => AddScore(2);
 
     public void OnBackboardBasket()
     {
@@ -126,7 +170,6 @@ public class GameManager : MonoBehaviour
         {
             int bonusPoints = activeBonus.Points;
             AddScore(2 + bonusPoints);
-            //Debug.Log($"<color=orange>BACKBOARD BONUS collected! +{bonusPoints} | Rarity: {activeBonus.Rarity}</color>");
             ClearBonus();
         }
         else
@@ -135,11 +178,37 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void OnAIBasket(int points)
+    {
+        if (!isGameActive) return;
+        aiScore += points;
+        GameplayUI.Instance?.ShowAIScore(aiScore);
+    }
+
+    public void OnAIBackboardBasket()
+    {
+        if (!isGameActive) return;
+
+        int points = 2;
+
+        if (isBonusActive)
+        {
+            points += activeBonus.Points;
+            ClearBonus();
+        }
+
+        aiScore += points;
+        GameplayUI.Instance?.ShowAIScore(aiScore);
+        Debug.Log($"<color=red>[AI] Backboard basket! +{points}</color>");
+    }
+
     private void ScheduleNextBonus()
     {
+        int totalShots = currentGameMode == GameMode.VsAI ? shotsFiredCount + aiShotsFiredCount : shotsFiredCount;
+
         int interval = Random.Range(minShotsBeforeBonus, maxShotsBeforeBonus + 1);
-        nextBonusAtShot = shotsFiredCount + interval;
-        Debug.Log($"<color=yellow>[GM] Next bonus at shot #{nextBonusAtShot} (in {interval} shots)</color>");
+        nextBonusAtShot = totalShots + interval;
+        Debug.Log($"<color=yellow>[GM] Next bonus at total shot #{nextBonusAtShot}</color>");
     }
 
     private void SpawnBonus()
@@ -153,9 +222,7 @@ public class GameManager : MonoBehaviour
 
         ScheduleNextBonus();
 
-        //Debug.Log($"<color=yellow>[GM] BONUS spawned: {activeBonus.Rarity} +{activeBonus.Points} | Expires in {bonusDuration}s</color>");
-
-        GameplayUI.Instance?.ShowBonusNotification($"BACKBOARD BONUS ACTIVE!", activeBonus.Color);
+        GameplayUI.Instance?.ShowBonusNotification("BACKBOARD BONUS ACTIVE!", activeBonus.Color);
 
         bonusExpireCoroutine = StartCoroutine(BonusExpireRoutine());
     }
@@ -183,6 +250,9 @@ public class GameManager : MonoBehaviour
     public float GetTimeRemaining() => timeRemaining;
     public float GetBonusTimeRemaining() => bonusTimeLeft;
     public int GetTotalScore() => totalScore;
+    public int GetAIScore() => aiScore;
     public bool IsBonusActive => isBonusActive;
     public BackboardBonus ActiveBonus => activeBonus;
+    public GameMode CurrentGameMode => currentGameMode;
+    public AIDifficulty CurrentDifficulty => currentDifficulty;
 }

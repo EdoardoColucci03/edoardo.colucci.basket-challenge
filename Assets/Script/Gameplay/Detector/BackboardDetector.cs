@@ -3,6 +3,7 @@
 public class BackboardDetector : MonoBehaviour
 {
     [SerializeField] private BasketDetector basketDetector;
+    [SerializeField] private AIBasketDetector aiBasketDetector;
     [SerializeField] private Transform basketTarget;
 
     [Header("Rebound Settings")]
@@ -10,26 +11,24 @@ public class BackboardDetector : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (!collision.gameObject.CompareTag("Ball")) return;
+        bool isPlayerBall = collision.gameObject.CompareTag("Ball");
+        bool isAIBall = collision.gameObject.CompareTag("BallAI");
 
-        basketDetector.OnBackboardHit();
+        if (!isPlayerBall && !isAIBall) return;
 
-        ShotPowerType lastShot = basketDetector.GetLastShotType();
+        ShotPowerType lastShot = isPlayerBall ? basketDetector.GetLastShotType() : aiBasketDetector.GetLastShotType();
 
-        Debug.Log($"<color=cyan>[BackboardDetector] Ball hit backboard | Shot type: {lastShot}</color>");
+        if (isPlayerBall)
+            basketDetector.OnBackboardHit();
+
+        Debug.Log($"<color=cyan>[BackboardDetector] Hit | Tag: {collision.gameObject.tag} | ShotType: {lastShot}</color>");
 
         if (lastShot == ShotPowerType.Good)
         {
             Rigidbody ballRb = collision.gameObject.GetComponent<Rigidbody>();
             if (ballRb != null && basketTarget != null)
-            {
-                RedirectToBasket(ballRb, collision.contacts[0].point);
-            }
+                ballRb.velocity = BasketballPhysics.CalculateVelocity(
+                    collision.contacts[0].point, basketTarget.position, reboundArcHeight);
         }
-    }
-
-    private void RedirectToBasket(Rigidbody ballRb, Vector3 contactPoint)
-    {
-        ballRb.velocity = BasketballPhysics.CalculateVelocity(contactPoint, basketTarget.position, reboundArcHeight);
     }
 }

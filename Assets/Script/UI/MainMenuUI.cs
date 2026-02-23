@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour
@@ -15,7 +16,7 @@ public class MainMenuUI : MonoBehaviour
 
     public void OnPlayButtonClicked()
     {
-        GameManager.Instance.StartGame();
+        SceneManager.LoadScene("ModeSelection");
     }
 
 }

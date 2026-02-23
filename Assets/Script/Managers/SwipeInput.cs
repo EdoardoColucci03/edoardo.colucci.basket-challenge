@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class SwipeInput : MonoBehaviour
 {
@@ -66,6 +67,8 @@ public class SwipeInput : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                return;
             StartSwipe(Input.mousePosition);
         }
         else if (Input.GetMouseButton(0) && isSwiping)
@@ -88,6 +91,8 @@ public class SwipeInput : MonoBehaviour
             switch (touch.phase)
             {
                 case TouchPhase.Began:
+                    if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+                        break;
                     StartSwipe(touch.position);
                     break;
 
@@ -199,7 +204,6 @@ public class SwipeInput : MonoBehaviour
     public void CancelSwipe()
     {
         isSwiping = false;
-        Debug.Log("<color=orange>[SwipeDetector] Swipe canceled - moved down (but still holding)</color>");
     }
 
     public void ResetSwipe()

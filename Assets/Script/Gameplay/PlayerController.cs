@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController Instance;
+    public bool IsBallInFlight { get; private set; }
+
     [Header("Ball Reference")]
     [SerializeField] private GameObject ballPrefab;
     [SerializeField] private Transform ballSpawnPoint;
@@ -33,11 +36,14 @@ public class PlayerController : MonoBehaviour
     private BallShooter ballShooter;
     private bool hasBall = true;
     private bool isAiming = false;
+    private bool inputEnabled = true;
     private Coroutine autoResetCoroutine;
     private Vector3 initialBackboardPosition;
 
-    //public bool HasBall => hasBall;
-    //public bool IsAiming => isAiming;
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
@@ -111,6 +117,8 @@ public class PlayerController : MonoBehaviour
 
     private void HandleAimingInput()
     {
+        if (!inputEnabled) return;
+
         if (Input.GetMouseButtonDown(0) && hasBall && !isAiming && autoResetCoroutine == null)
         {
             StartAiming();
@@ -124,6 +132,8 @@ public class PlayerController : MonoBehaviour
 
     private void HandleSwipeUpdate()
     {
+        if (!inputEnabled) return;
+
         if (swipeDetector.IsSwipeActive && isAiming)
         {
             float power = swipeDetector.SwipePower;
@@ -134,6 +144,8 @@ public class PlayerController : MonoBehaviour
 
     private void HandleAutoShoot()
     {
+        if (!inputEnabled) return;
+
         if (swipeDetector.ShouldAutoShoot && isAiming)
         {
             ExecuteShot();
@@ -171,10 +183,19 @@ public class PlayerController : MonoBehaviour
         }
 
         float finalPower = swipeDetector.SwipePower;
+
+        if (finalPower <= 0f)
+        {
+            CancelShot();
+            return;
+        }
+
         ShotPowerType powerType = powerBarUI.GetShotPowerType(finalPower);
 
         hasBall = false;
         isAiming = false;
+
+        IsBallInFlight = true;
 
         basketDetector?.SetLastShotType(powerType);
 
@@ -221,6 +242,8 @@ public class PlayerController : MonoBehaviour
 
     public void ResetShot()
     {
+        IsBallInFlight = false;
+
         if (autoResetCoroutine != null)
         {
             StopCoroutine(autoResetCoroutine);
@@ -323,6 +346,11 @@ public class PlayerController : MonoBehaviour
         }
 
         hasBall = true;
+    }
+
+    public void SetInputEnabled(bool value)
+    {
+        inputEnabled = value;
     }
 
     private void OnDrawGizmos()

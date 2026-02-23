@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class GameplayUI : MonoBehaviour
@@ -9,6 +10,11 @@ public class GameplayUI : MonoBehaviour
     [Header("UI Container")]
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private TextMeshProUGUI scoreText;
+
+    [Header("VS AI")]
+    [SerializeField] private GameObject aiScoreContainer;
+    [SerializeField] private TextMeshProUGUI aiScoreText;
+    [SerializeField] private RectTransform timerRect;
 
     [Header("Backboard Bonus 3D")]
     [SerializeField] private TextMeshPro bonusText3D;
@@ -25,6 +31,13 @@ public class GameplayUI : MonoBehaviour
     [SerializeField] private float notificationDuration = 2f;
     [SerializeField] private float notificationFadeDuration = 0.5f;
 
+    [Header("Pause")]
+    [SerializeField] private GameObject pausePanel;
+    [SerializeField] private Button pauseButton;
+    [SerializeField] private Button backToGameButton;
+    [SerializeField] private Button mainMenuButton;
+
+    private bool isPaused = false;
     private Coroutine flyerCoroutine;
     private Coroutine notificationCoroutine;
 
@@ -37,13 +50,66 @@ public class GameplayUI : MonoBehaviour
     {
         flyerText.gameObject.SetActive(false);
         bonusNotificationText.gameObject.SetActive(false);
+        pausePanel.SetActive(false);
+
+        pauseButton.onClick.AddListener(OpenPause);
+        backToGameButton.onClick.AddListener(ClosePause);
+        mainMenuButton.onClick.AddListener(GoToMainMenu);
+
+        bool isVsAI = GameManager.Instance != null &&
+                      GameManager.Instance.CurrentGameMode == GameMode.VsAI;
+
+        if (aiScoreContainer != null)
+            aiScoreContainer.SetActive(isVsAI);
+
+        if (isVsAI && aiScoreText != null)
+            aiScoreText.text = "ScoreAI: 0";
+
+        if (!isVsAI && timerRect != null && aiScoreContainer != null)
+        {
+            RectTransform aiRect = aiScoreContainer.GetComponent<RectTransform>();
+            timerRect.anchorMin = aiRect.anchorMin;
+            timerRect.anchorMax = aiRect.anchorMax;
+            timerRect.pivot = aiRect.pivot;
+            timerRect.anchoredPosition = aiRect.anchoredPosition;
+        }
     }
 
     private void Update()
     {
-        UpdateTimerUI();
-        UpdateScoreUI();
-        UpdateBonusUI();
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (isPaused) ClosePause();
+            else OpenPause();
+        }
+
+        if (!isPaused)
+        {
+            UpdateTimerUI();
+            UpdateScoreUI();
+            UpdateBonusUI();
+        }
+    }
+
+    private void OpenPause()
+    {
+        isPaused = true;
+        pausePanel.SetActive(true);
+        Time.timeScale = 0f;
+    }
+
+    private void ClosePause()
+    {
+        isPaused = false;
+        pausePanel.SetActive(false);
+        Time.timeScale = 1f;
+    }
+
+
+    private void GoToMainMenu()
+    {
+        Time.timeScale = 1f;
+        GameManager.Instance?.ReturnToMainMenu();
     }
 
     private void UpdateTimerUI()
@@ -55,7 +121,6 @@ public class GameplayUI : MonoBehaviour
         timerText.text = $"{minutes}:{seconds:D2}";
         timerText.color = totalSeconds <= 10 ? Color.red : Color.yellow;
     }
-
 
     private void UpdateScoreUI()
     {
@@ -89,6 +154,11 @@ public class GameplayUI : MonoBehaviour
         }
     }
 
+    public void ShowAIScore(int score)
+    {
+        if (aiScoreText != null)
+            aiScoreText.text = $"ScoreAI: {score}";
+    }
 
     public void ShowScoreFlyer(int points, string label, Color color)
     {

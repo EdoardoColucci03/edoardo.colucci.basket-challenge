@@ -55,7 +55,7 @@ public class BasketDetector : MonoBehaviour
             GameManager.Instance?.OnPerfectShot();
             GameplayUI.Instance?.ShowScoreFlyer(points, shotType, Color.green);
         }
-        else if (lastShotType == ShotPowerType.Good && hasHitBackboard)
+        else if (hasHitBackboard)
         {
             bool bonusActive = GameManager.Instance != null && GameManager.Instance.IsBonusActive;
             int bonusPoints = bonusActive ? GameManager.Instance.ActiveBonus.Points : 0;

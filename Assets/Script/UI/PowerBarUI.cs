@@ -41,7 +41,7 @@ public class PowerBarUI : MonoBehaviour
 
     [Header("Zone Shuffle Settings")]
     [SerializeField] private float zoneShuffleDuration = 0.4f;
-    [Tooltip("Ogni quanti punti scatta il primo shuffle — si riduce col punteggio")]
+    [Tooltip("Ogni quanti punti scatta il primo shuffle - si riduce col punteggio")]
     [SerializeField] private int shuffleIntervalStart = 20;
     [Tooltip("Intervallo minimo tra shuffle ad alto punteggio")]
     [SerializeField] private int shuffleIntervalMin = 6;
@@ -72,6 +72,11 @@ public class PowerBarUI : MonoBehaviour
     private bool isShuffling = false;
     private bool isFrozenBar = false;
 
+    private int activeShuffleIntervalStart;
+    private int activeShuffleIntervalMin;
+    private float activePerfectSizeMin;
+    private float activeGoodSizeMin;
+
     private void Start()
     {
         maxHeight = powerBarFill.parent.GetComponent<RectTransform>().rect.height;
@@ -81,6 +86,41 @@ public class PowerBarUI : MonoBehaviour
         goodSizeStart = goodZoneEnd - goodZoneStart;
 
         CreateZones();
+        InitDifficultySettings();
+    }
+
+    private void InitDifficultySettings()
+    {
+        if (GameManager.Instance == null || GameManager.Instance.CurrentGameMode != GameMode.VsAI)
+        {
+            activeShuffleIntervalStart = shuffleIntervalStart;
+            activeShuffleIntervalMin = shuffleIntervalMin;
+            activePerfectSizeMin = perfectSizeMin;
+            activeGoodSizeMin = goodSizeMin;
+            return;
+        }
+
+        switch (GameManager.Instance.CurrentDifficulty)
+        {
+            case AIDifficulty.Easy:
+                activeShuffleIntervalStart = 25;
+                activeShuffleIntervalMin = 10;
+                activePerfectSizeMin = 0.08f;
+                activeGoodSizeMin = 0.10f;
+                break;
+            case AIDifficulty.Normal:
+                activeShuffleIntervalStart = shuffleIntervalStart;
+                activeShuffleIntervalMin = shuffleIntervalMin;
+                activePerfectSizeMin = perfectSizeMin;
+                activeGoodSizeMin = goodSizeMin;
+                break;
+            case AIDifficulty.Hard:
+                activeShuffleIntervalStart = 15;
+                activeShuffleIntervalMin = 4;
+                activePerfectSizeMin = 0.03f;
+                activeGoodSizeMin = 0.05f;
+                break;
+        }
     }
 
     private void Update()
@@ -170,7 +210,7 @@ public class PowerBarUI : MonoBehaviour
     private int GetCurrentShuffleInterval(int score)
     {
         float t = Mathf.Clamp01((float)score / shuffleMaxDifficultyScore);
-        return Mathf.RoundToInt(Mathf.Lerp(shuffleIntervalStart, shuffleIntervalMin, t));
+        return Mathf.RoundToInt(Mathf.Lerp(activeShuffleIntervalStart, activeShuffleIntervalMin, t));
     }
 
     private float GetCurrentZoneSize(float sizeStart, float sizeMin, int score)
@@ -183,8 +223,8 @@ public class PowerBarUI : MonoBehaviour
     {
         isShuffling = true;
 
-        float perfectSize = GetCurrentZoneSize(perfectSizeStart, perfectSizeMin, score);
-        float goodSize = GetCurrentZoneSize(goodSizeStart, goodSizeMin, score);
+        float perfectSize = GetCurrentZoneSize(perfectSizeStart, activePerfectSizeMin, score);
+        float goodSize = GetCurrentZoneSize(goodSizeStart, activeGoodSizeMin, score);
 
         bool inverted = Random.value > 0.5f;
         float gap = minZoneGap;
