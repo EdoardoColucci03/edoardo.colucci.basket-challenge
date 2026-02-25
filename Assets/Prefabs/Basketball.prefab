@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2914915194115213918}
   - component: {fileID: 8136303639122322718}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Trajectory
   m_TagString: Ball
   m_Icon: {fileID: 0}
@@ -67,7 +67,7 @@ GameObject:
   - component: {fileID: 8325501127799310995}
   - component: {fileID: 7624313782257349002}
   - component: {fileID: 8412802296423684100}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Basketball
   m_TagString: Ball
   m_Icon: {fileID: 0}
@@ -180,12 +180,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   highBackboardOffset: 0.5
-  backboardMinHeightOffset: 0.25
-  backboardMaxHeightOffset: 0.55
-  backboardNormal: {x: 0, y: 0, z: -1}
-  targetDescentAngle: 10
-  minArcHeight: 1.5
-  maxArcHeight: 1
+  arcHeight: 1.5
+  spinSpeed: 5
 --- !u!135 &8412802296423684100
 SphereCollider:
   m_ObjectHideFlags: 0

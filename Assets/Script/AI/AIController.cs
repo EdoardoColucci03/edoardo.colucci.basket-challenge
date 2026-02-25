@@ -20,8 +20,8 @@ public class AIController : MonoBehaviour
     [SerializeField] private Transform playerTransform;
 
     [Header("Timing")]
-    [SerializeField] private float shootDelay = 1.5f;
-    [SerializeField] private float resetDelay = 1.5f;
+    [SerializeField] private float shootDelay = 2f;
+    [SerializeField] private float resetDelay = 2f;
 
     private GameObject currentBall;
     private BallShooter ballShooter;
@@ -46,13 +46,25 @@ public class AIController : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        isActive = false;
+    }
+
     private IEnumerator AILoop()
     {
         while (isActive)
         {
             yield return new WaitForSeconds(shootDelay);
+
+            if (!isActive || this == null) yield break;
+
             ExecuteAIShot();
+
             yield return new WaitForSeconds(resetDelay);
+
+            if (!isActive || this == null) yield break;
+
             ResetAI();
         }
     }
@@ -82,18 +94,18 @@ public class AIController : MonoBehaviour
 
             if (difficulty == AIDifficulty.Easy)
             {
-                chanceGood = 0.20f;
-                chanceNearGood = 0.35f;
+                chanceGood = 0.10f;
+                chanceNearGood = 0.22f;
             }
             else if (difficulty == AIDifficulty.Normal)
             {
-                chanceGood = 0.45f;
-                chanceNearGood = 0.60f;
+                chanceGood = 0.40f;
+                chanceNearGood = 0.58f;
             }
             else if (difficulty == AIDifficulty.Hard)
             {
-                chanceGood = 0.75f;
-                chanceNearGood = 0.80f;
+                chanceGood = 0.82f;
+                chanceNearGood = 0.88f;
             }
 
             if (roll < chanceGood) return ShotPowerType.Good;
@@ -102,23 +114,33 @@ public class AIController : MonoBehaviour
 
         if (difficulty == AIDifficulty.Easy)
         {
-            if (roll < 0.30f) return ShotPowerType.Perfect;
-            if (roll < 0.50f) return ShotPowerType.NearPerfect;
-            if (roll < 0.70f) return ShotPowerType.Normal;
+            if (roll < 0.15f) return ShotPowerType.Perfect;
+            if (roll < 0.30f) return ShotPowerType.NearPerfect;
+            if (roll < 0.55f) return ShotPowerType.Normal;
             return ShotPowerType.Weak;
         }
         else if (difficulty == AIDifficulty.Normal)
         {
-            if (roll < 0.55f) return ShotPowerType.Perfect;
-            if (roll < 0.75f) return ShotPowerType.NearPerfect;
-            if (roll < 0.85f) return ShotPowerType.Normal;
+            if (roll < 0.40f) return ShotPowerType.Perfect;
+            if (roll < 0.62f) return ShotPowerType.NearPerfect;
+            if (roll < 0.82f) return ShotPowerType.Normal;
             return ShotPowerType.Weak;
         }
         else if (difficulty == AIDifficulty.Hard)
         {
-            if (roll < 0.60f) return ShotPowerType.Perfect;
-            if (roll < 0.80f) return ShotPowerType.Good;
-            if (roll < 0.95f) return ShotPowerType.NearPerfect;
+            bool fireballActive = FireballManager.Instance != null && FireballManager.Instance.IsFireballActive;
+
+            if (fireballActive)
+            {
+                if (roll < 0.70f) return ShotPowerType.Perfect;
+                if (roll < 0.88f) return ShotPowerType.Good;
+                if (roll < 0.97f) return ShotPowerType.NearPerfect;
+                return ShotPowerType.Normal;
+            }
+
+            if (roll < 0.55f) return ShotPowerType.Perfect;
+            if (roll < 0.73f) return ShotPowerType.Good;
+            if (roll < 0.90f) return ShotPowerType.NearPerfect;
             return ShotPowerType.Normal;
         }
 

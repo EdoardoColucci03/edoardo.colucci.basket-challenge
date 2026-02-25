@@ -72,6 +72,11 @@ public class PowerBarUI : MonoBehaviour
     private bool isShuffling = false;
     private bool isFrozenBar = false;
 
+    private float snapshotPerfectZoneStart;
+    private float snapshotPerfectZoneEnd;
+    private float snapshotGoodZoneStart;
+    private float snapshotGoodZoneEnd;
+
     private int activeShuffleIntervalStart;
     private int activeShuffleIntervalMin;
     private float activePerfectSizeMin;
@@ -87,6 +92,7 @@ public class PowerBarUI : MonoBehaviour
 
         CreateZones();
         InitDifficultySettings();
+        TakeSnapshot();
     }
 
     private void InitDifficultySettings()
@@ -117,7 +123,7 @@ public class PowerBarUI : MonoBehaviour
             case AIDifficulty.Hard:
                 activeShuffleIntervalStart = 15;
                 activeShuffleIntervalMin = 4;
-                activePerfectSizeMin = 0.03f;
+                activePerfectSizeMin = 0.05f;
                 activeGoodSizeMin = 0.05f;
                 break;
         }
@@ -219,6 +225,14 @@ public class PowerBarUI : MonoBehaviour
         return Mathf.Lerp(sizeStart, sizeMin, t);
     }
 
+    private void TakeSnapshot()
+    {
+        snapshotPerfectZoneStart = perfectZoneStart;
+        snapshotPerfectZoneEnd = perfectZoneEnd;
+        snapshotGoodZoneStart = goodZoneStart;
+        snapshotGoodZoneEnd = goodZoneEnd;
+    }
+
     private IEnumerator ShuffleZones(int score)
     {
         isShuffling = true;
@@ -294,12 +308,15 @@ public class PowerBarUI : MonoBehaviour
         goodZoneStart = newGoodStart;
         goodZoneEnd = newGoodEnd;
 
+        TakeSnapshot();
+
         isShuffling = false;
     }
 
     public void FreezeBar()
     {
         isFrozenBar = true;
+        TakeSnapshot();
     }
 
     public void UpdatePower(float normalizedPower)
@@ -327,7 +344,6 @@ public class PowerBarUI : MonoBehaviour
             Vector3 topCenter = (corners[1] + corners[2]) / 2f;
             fillIndicator.position = topCenter;
         }
-
     }
 
     public void ResetBar()
@@ -338,20 +354,25 @@ public class PowerBarUI : MonoBehaviour
 
     public ShotPowerType GetShotPowerType(float normalizedPower)
     {
-        if (normalizedPower >= perfectZoneStart && normalizedPower <= perfectZoneEnd)
+        float pStart = isFrozenBar ? snapshotPerfectZoneStart : perfectZoneStart;
+        float pEnd = isFrozenBar ? snapshotPerfectZoneEnd : perfectZoneEnd;
+        float gStart = isFrozenBar ? snapshotGoodZoneStart : goodZoneStart;
+        float gEnd = isFrozenBar ? snapshotGoodZoneEnd : goodZoneEnd;
+
+        if (normalizedPower >= pStart && normalizedPower <= pEnd)
             return ShotPowerType.Perfect;
 
-        if (normalizedPower >= goodZoneStart && normalizedPower <= goodZoneEnd)
+        if (normalizedPower >= gStart && normalizedPower <= gEnd)
             return ShotPowerType.Good;
 
-        if (IsNearPerfect(normalizedPower))
+        if (IsNearZone(normalizedPower, pStart, pEnd, nearPerfectTolerance))
             return ShotPowerType.NearPerfect;
 
-        if (IsNearGood(normalizedPower))
+        if (IsNearZone(normalizedPower, gStart, gEnd, nearGoodTolerance))
             return ShotPowerType.NearGood;
 
-        float lowerZoneBottom = Mathf.Min(perfectZoneStart, goodZoneStart);
-        float upperZoneTop = Mathf.Max(perfectZoneEnd, goodZoneEnd);
+        float lowerZoneBottom = Mathf.Min(pStart, gStart);
+        float upperZoneTop = Mathf.Max(pEnd, gEnd);
 
         if (normalizedPower < lowerZoneBottom - nearPerfectTolerance)
             return ShotPowerType.Weak;
@@ -362,21 +383,11 @@ public class PowerBarUI : MonoBehaviour
         return ShotPowerType.Normal;
     }
 
-    private bool IsNearPerfect(float power)
+    private bool IsNearZone(float power, float zoneStart, float zoneEnd, float tolerance)
     {
-        float distanceToStart = Mathf.Abs(power - perfectZoneStart);
-        float distanceToEnd = Mathf.Abs(power - perfectZoneEnd);
+        float distanceToStart = Mathf.Abs(power - zoneStart);
+        float distanceToEnd = Mathf.Abs(power - zoneEnd);
         float minDistance = Mathf.Min(distanceToStart, distanceToEnd);
-        return minDistance <= nearPerfectTolerance &&
-               (power < perfectZoneStart || power > perfectZoneEnd);
-    }
-
-    private bool IsNearGood(float power)
-    {
-        float distanceToStart = Mathf.Abs(power - goodZoneStart);
-        float distanceToEnd = Mathf.Abs(power - goodZoneEnd);
-        float minDistance = Mathf.Min(distanceToStart, distanceToEnd);
-        return minDistance <= nearGoodTolerance &&
-               (power < goodZoneStart || power > goodZoneEnd);
+        return minDistance <= tolerance && (power < zoneStart || power > zoneEnd);
     }
 }

@@ -75,8 +75,14 @@ public class SettingsUI : MonoBehaviour
     private void OnSettingsBackClicked()
     {
         AudioManager.Instance?.SaveVolumes();
-        SceneManager.LoadScene(previousScene);
+        string prev = PlayerPrefs.GetString("PreviousScene", "MainMenu");
+
+        if (prev == "MainMenu" || string.IsNullOrEmpty(prev))
+            SceneManager.LoadScene("MainMenu");
+        else
+            SceneManager.LoadScene(prev);
     }
+
 
     private void OnCreditsBackClicked()
     {

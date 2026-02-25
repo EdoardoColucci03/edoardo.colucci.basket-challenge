@@ -3,6 +3,7 @@ using UnityEngine;
 public class BasketDetector : MonoBehaviour
 {
     [SerializeField] private float minVelocityY = -0.5f;
+    [SerializeField] private ParticleSystem basketVFX;
 
     private bool hasHitRim = false;
     private bool hasHitBackboard = false;
@@ -83,6 +84,8 @@ public class BasketDetector : MonoBehaviour
             AudioManager.Instance?.PlayBallNet();
         }
 
+        basketVFX?.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        basketVFX?.Play();
         Debug.Log($"<color=green>{shotType} +{points} points</color>");
         ResetShotState();
         PlayerController.Instance?.ScheduleAutoReset(scored: true);

@@ -21,11 +21,13 @@ public class MainMenuUI : MonoBehaviour
 
     public void OnPlayButtonClicked()
     {
+        PlayerPrefs.DeleteKey("PreviousScene");
         SceneManager.LoadScene("ModeSelection");
     }
 
     public void OnSettingsButtonClicked()
     {
+        PlayerPrefs.DeleteKey("PreviousScene");
         SceneManager.LoadScene("Settings");
     }
 

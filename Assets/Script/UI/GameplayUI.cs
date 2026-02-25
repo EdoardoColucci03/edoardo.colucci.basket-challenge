@@ -34,15 +34,15 @@ public class GameplayUI : MonoBehaviour
     [Header("Fireball UI")]
     [SerializeField] private GameObject fireballContainer;
     [SerializeField] private RectTransform fireballBarFill;
-    [SerializeField] private Image fireballBarFillImage;      
-    [SerializeField] private Image fireballEffectImage;       
+    [SerializeField] private Image fireballBarFillImage;
+    [SerializeField] private Image fireballEffectImage;
     [SerializeField] private GameObject fireballActiveEffect;
     [SerializeField] private TextMeshProUGUI fireballActiveText;
     [SerializeField] private float fireballPulseSpeed = 6f;
 
     private readonly Color fillColorEmpty = new Color(1f, 0.85f, 0f, 1f);
-    private readonly Color fillColorMid = new Color(1f, 0.45f, 0f, 1f); 
-    private readonly Color fillColorFull = new Color(1f, 0.05f, 0f, 1f); 
+    private readonly Color fillColorMid = new Color(1f, 0.45f, 0f, 1f);
+    private readonly Color fillColorFull = new Color(1f, 0.05f, 0f, 1f);
 
     private readonly Color effectColorDim = new Color(0.2f, 0.05f, 0f, 0.4f);
     private readonly Color effectColorFull = new Color(1f, 0.05f, 0f, 1f);
@@ -56,9 +56,9 @@ public class GameplayUI : MonoBehaviour
     [SerializeField] private Button restartButton;
     [SerializeField] private Button audioSettingsButton;
     [SerializeField] private GameObject audioSubPanel;
-    [SerializeField] private Slider musicSlider;        
-    [SerializeField] private Slider sfxSlider;          
-    [SerializeField] private Button audioBackButton;    
+    [SerializeField] private Slider musicSlider;
+    [SerializeField] private Slider sfxSlider;
+    [SerializeField] private Button audioBackButton;
 
     private bool isPaused = false;
     private Coroutine flyerCoroutine;
@@ -111,7 +111,6 @@ public class GameplayUI : MonoBehaviour
             timerRect.pivot = aiRect.pivot;
             timerRect.anchoredPosition = aiRect.anchoredPosition;
         }
-
     }
 
     private void Update()
@@ -144,7 +143,6 @@ public class GameplayUI : MonoBehaviour
         pausePanel.SetActive(false);
         Time.timeScale = 1f;
     }
-
 
     private void GoToMainMenu()
     {
@@ -198,7 +196,6 @@ public class GameplayUI : MonoBehaviour
     {
         bool isActive = FireballManager.Instance != null && FireballManager.Instance.IsFireballActive;
 
-        // Testo pulsante
         if (fireballActiveText != null)
         {
             fireballActiveText.gameObject.SetActive(isActive);
@@ -230,7 +227,6 @@ public class GameplayUI : MonoBehaviour
 
     public void ShowScoreFlyer(int points, string label, Color color, bool fireballActive = false)
     {
-
         int displayPoints = fireballActive ? points * 2 : points;
         Color displayColor = fireballActive ? new Color(1f, 0.4f, 0f) : color;
         string displayLabel = fireballActive ? $"FIREBALL! {label}" : label;
@@ -323,7 +319,6 @@ public class GameplayUI : MonoBehaviour
         }
     }
 
-
     public void UpdateScore(int score)
     {
         if (scoreText != null)
@@ -363,6 +358,8 @@ public class GameplayUI : MonoBehaviour
 
     private void LoadVolumes()
     {
+        if (AudioManager.Instance == null) return;
+
         float musicVol = Mathf.Round(AudioManager.Instance.musicVolume * 10f) / 10f;
         float sfxVol = Mathf.Round(AudioManager.Instance.sfxVolume * 10f) / 10f;
         musicSlider.value = musicVol;
@@ -373,14 +370,14 @@ public class GameplayUI : MonoBehaviour
     {
         float stepped = Mathf.Round(value * 10f) / 10f;
         musicSlider.value = stepped;
-        AudioManager.Instance.SetMusicVolume(stepped);
+        AudioManager.Instance?.SetMusicVolume(stepped);
     }
 
     private void OnSFXSliderChanged(float value)
     {
         float stepped = Mathf.Round(value * 10f) / 10f;
         sfxSlider.value = stepped;
-        AudioManager.Instance.SetSFXVolume(stepped);
+        AudioManager.Instance?.SetSFXVolume(stepped);
     }
 
     public void OnAudioSettingsClicked()

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2914915194115213918}
   - component: {fileID: 8136303639122322718}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Trajectory
   m_TagString: Ball
   m_Icon: {fileID: 0}
@@ -67,7 +67,7 @@ GameObject:
   - component: {fileID: 8325501127799310995}
   - component: {fileID: 7624313782257349002}
   - component: {fileID: 8412802296423684100}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BasketballAI
   m_TagString: BallAI
   m_Icon: {fileID: 0}

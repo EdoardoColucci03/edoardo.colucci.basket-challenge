@@ -13,7 +13,13 @@ public class UniversalSettingsButton : MonoBehaviour
 
     private void OpenSettings()
     {
-        PlayerPrefs.SetString("PreviousScene", SceneManager.GetActiveScene().name);
+        string currentScene = SceneManager.GetActiveScene().name;
+
+        if (currentScene != "MainMenu")
+        {
+            PlayerPrefs.SetString("PreviousScene", currentScene);
+        }
+
         SceneManager.LoadScene("Settings");
         AudioManager.Instance?.PlayButtonClickPrimary();
     }

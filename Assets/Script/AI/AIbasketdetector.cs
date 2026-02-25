@@ -5,6 +5,7 @@ using UnityEngine;
 public class AIBasketDetector : MonoBehaviour
 {
     [SerializeField] private float minVelocityY = -0.3f;
+    [SerializeField] private ParticleSystem basketVFX;
 
     private bool hasScored = false;
     private ShotPowerType lastShotType;
@@ -35,14 +36,12 @@ public class AIBasketDetector : MonoBehaviour
         if (lastShotType == ShotPowerType.Perfect)
         {
             GameManager.Instance?.OnAIBasket(3);
-            //Debug.Log("<color=red>[AI Basket] PERFECT +3</color>");
             AudioManager.Instance?.PlayPerfectShot();
             AudioManager.Instance?.PlayBallNet();
         }
         else if (lastShotType == ShotPowerType.Good)
         {
             GameManager.Instance?.OnAIBackboardBasket();
-            //Debug.Log("<color=red>[AI Basket] BACKBOARD</color>");
             if (GameManager.Instance != null && GameManager.Instance.IsBonusActive)
                 AudioManager.Instance?.PlayBonusBasket();
             AudioManager.Instance?.PlayBallNet();
@@ -50,9 +49,11 @@ public class AIBasketDetector : MonoBehaviour
         else
         {
             GameManager.Instance?.OnAIBasket(2);
-            //Debug.Log("<color=red>[AI Basket] +2</color>");
             AudioManager.Instance?.PlayBallNet();
         }
+
+        basketVFX?.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        basketVFX?.Play();
 
         lastShotType = ShotPowerType.None;
         hasScored = false;

@@ -50,10 +50,7 @@ public class PlayerController : MonoBehaviour
         ValidateReferences();
 
         if (backboardTarget != null)
-        {
             initialBackboardPosition = backboardTarget.position;
-            //Debug.Log($"<color=cyan>[BackboardTarget] Initial position saved: {initialBackboardPosition}</color>");
-        }
 
         MovePlayerToPosition();
         SpawnBall();
@@ -108,11 +105,10 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateBallPosition()
     {
-        if (hasBall && currentBall != null && ballSpawnPoint != null)
-        {
-            currentBall.transform.position = ballSpawnPoint.position;
-            currentBall.transform.rotation = ballSpawnPoint.rotation;
-        }
+        if (!hasBall || currentBall == null || ballSpawnPoint == null) return;
+
+        currentBall.transform.position = ballSpawnPoint.position;
+        currentBall.transform.rotation = ballSpawnPoint.rotation;
     }
 
     private void HandleAimingInput()
@@ -120,14 +116,10 @@ public class PlayerController : MonoBehaviour
         if (!inputEnabled) return;
 
         if (Input.GetMouseButtonDown(0) && hasBall && !isAiming && autoResetCoroutine == null)
-        {
             StartAiming();
-        }
 
         if (Input.GetMouseButtonUp(0) && isAiming)
-        {
             ExecuteShot();
-        }
     }
 
     private void HandleSwipeUpdate()
@@ -147,9 +139,7 @@ public class PlayerController : MonoBehaviour
         if (!inputEnabled) return;
 
         if (swipeDetector.ShouldAutoShoot && isAiming)
-        {
             ExecuteShot();
-        }
     }
 
     private void StartAiming()
@@ -194,21 +184,15 @@ public class PlayerController : MonoBehaviour
 
         hasBall = false;
         isAiming = false;
-
         IsBallInFlight = true;
 
         basketDetector?.SetLastShotType(powerType);
-
         GameManager.Instance?.OnShotFired();
-
         ballShooter.ShootBall(basketTarget.position, backboardTarget.position, powerType);
-
         AudioManager.Instance?.PlayBallLaunch();
 
         if (basketballCamera != null)
-        {
             basketballCamera.StartBallCam();
-        }
 
         CleanupAfterShot();
 
@@ -231,9 +215,7 @@ public class PlayerController : MonoBehaviour
     public void ScheduleAutoReset(bool scored = false)
     {
         if (autoResetCoroutine == null)
-        {
             autoResetCoroutine = StartCoroutine(AutoResetRoutine(scored));
-        }
     }
 
     private IEnumerator AutoResetRoutine(bool scored)
@@ -256,14 +238,10 @@ public class PlayerController : MonoBehaviour
         }
 
         if (basketballCamera != null)
-        {
             basketballCamera.StopBallCam();
-        }
 
         if (currentBall != null)
-        {
             Destroy(currentBall);
-        }
 
         MovePlayerToPosition();
         SpawnBall();
@@ -273,8 +251,6 @@ public class PlayerController : MonoBehaviour
         swipeDetector.ResetSwipe();
         powerBarUI.ResetBar();
         trajectoryVisualizer.HideTrajectory();
-
-        //Debug.Log($"<color=orange>[PlayerController] Ball Reset - Player moved to new position</color>");
     }
 
     private void MovePlayerToPosition()
@@ -282,7 +258,6 @@ public class PlayerController : MonoBehaviour
         if (spawnManager == null || playerTransform == null) return;
 
         Transform nextPosition = spawnManager.GetNextSpawnPosition();
-
         playerTransform.position = nextPosition.position;
 
         if (basketTarget != null)
@@ -291,19 +266,13 @@ public class PlayerController : MonoBehaviour
             directionToBasket.y = 0;
 
             if (directionToBasket != Vector3.zero)
-            {
                 playerTransform.rotation = Quaternion.LookRotation(directionToBasket);
-            }
         }
 
         UpdateBackboardTarget();
 
         if (basketballCamera != null)
-        {
             basketballCamera.UpdateCameraPosition();
-        }
-
-        //Debug.Log($"<color=orange>[PlayerController] Player at {nextPosition.name} facing basket</color>");
     }
 
     private void UpdateBackboardTarget()
@@ -318,25 +287,18 @@ public class PlayerController : MonoBehaviour
 
         Vector3 targetPosition = initialBackboardPosition;
         targetPosition.x += lateralOffset;
-
         backboardTarget.position = targetPosition;
-
-        //Debug.Log($"<color=cyan>[BackboardTarget] PlayerX: {playerPos.x:F2} | BasketX: {basketPos.x:F2} | Offset: {lateralOffset:F2} | New Pos: {targetPosition}</color>");
     }
 
     private void SpawnBall()
     {
         if (currentBall != null)
-        {
             Destroy(currentBall);
-        }
 
         currentBall = Instantiate(ballPrefab, ballSpawnPoint.position, ballSpawnPoint.rotation);
 
         if (!currentBall.TryGetComponent(out ballShooter))
-        {
             ballShooter = currentBall.AddComponent<BallShooter>();
-        }
 
         if (currentBall.TryGetComponent<Rigidbody>(out var rb))
         {
@@ -346,9 +308,7 @@ public class PlayerController : MonoBehaviour
         }
 
         if (basketballCamera != null)
-        {
             basketballCamera.SetBall(currentBall.transform);
-        }
 
         hasBall = true;
     }

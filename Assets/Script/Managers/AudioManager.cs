@@ -69,6 +69,7 @@ public class AudioManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             LoadVolumes();
+            SetupAudioSources();
             SetupFireballLoopSource();
         }
         else
@@ -78,9 +79,16 @@ public class AudioManager : MonoBehaviour
         }
     }
 
+    private void SetupAudioSources()
+    {
+        if (musicSource != null) musicSource.outputAudioMixerGroup = musicMixerGroup;
+        if (sfxSource != null) sfxSource.outputAudioMixerGroup = sfxMixerGroup;
+    }
+
     private void Start()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        UpdateAllMixerVolumes();
         PlayMusicForScene(SceneManager.GetActiveScene().name);
     }
 

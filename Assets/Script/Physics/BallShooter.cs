@@ -78,20 +78,20 @@ public class BallShooter : MonoBehaviour
                 break;
 
             case ShotPowerType.Normal:
-                powerMultiplier = Random.Range(0.88f, 1.12f);
+                powerMultiplier = Random.Range(0.92f, 1.08f);
                 errorVector = new Vector3(
-                Random.Range(-0.25f, 0.25f),
                 Random.Range(-0.15f, 0.15f),
-                Random.Range(-0.2f, 0.2f)
+                Random.Range(-0.10f, 0.10f),
+                Random.Range(-0.12f, 0.12f)
                 );
                 break;
 
             case ShotPowerType.NearPerfect:
                 powerMultiplier = Random.Range(0.96f, 1.04f);
                 errorVector = new Vector3(
-                Random.Range(-0.08f, 0.08f),
-                Random.Range(-0.05f, 0.05f),
-                Random.Range(-0.06f, 0.06f)
+                Random.Range(-0.06f, 0.06f),
+                Random.Range(-0.03f, 0.03f),
+                Random.Range(-0.04f, 0.04f)
                 );
                 break;
 
@@ -103,8 +103,8 @@ public class BallShooter : MonoBehaviour
             case ShotPowerType.NearGood:
                 powerMultiplier = Random.Range(0.98f, 1.05f);
                 errorVector = new Vector3(
-                Random.Range(-0.10f, 0.10f),
-                Random.Range(-0.08f, 0.08f),
+                Random.Range(-0.07f, 0.07f),
+                Random.Range(-0.05f, 0.05f),
                 0f
                 );
                 break;
