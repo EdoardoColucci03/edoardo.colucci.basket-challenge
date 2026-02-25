@@ -32,8 +32,6 @@ public class RewardUI : MonoBehaviour
 
     private readonly string[] titles = { "KEEP TRYING!", "NOT BAD!", "GOOD SHOT!", "SHARPSHOOTER!", "LEGENDARY!" };
 
-    private bool hasPlayedRewardSound = false;
-
     private void Start()
     {
         playAgainButton.onClick.AddListener(OnPlayAgainClicked);
@@ -47,8 +45,8 @@ public class RewardUI : MonoBehaviour
     {
         yield return null;
 
-        bool playSounds = !hasPlayedRewardSound;
-        hasPlayedRewardSound = true;
+        bool playSounds = !GameManager.Instance.HasPlayedRewardSound;
+        GameManager.Instance.HasPlayedRewardSound = true;
 
         DisplayFinalScore(playSounds);
     }

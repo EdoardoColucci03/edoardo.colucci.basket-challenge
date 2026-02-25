@@ -33,6 +33,8 @@ public class GameManager : MonoBehaviour
     private AIDifficulty currentDifficulty = AIDifficulty.Normal;
     private int aiScore = 0;
 
+    public bool HasPlayedRewardSound { get; set; } = false;
+
     private void Awake()
     {
         if (Instance == null)
@@ -103,6 +105,7 @@ public class GameManager : MonoBehaviour
         aiShotsFiredCount = 0;
         waitingForShotToFinish = false;
         isGameActive = true;
+        HasPlayedRewardSound = false;
         FireballManager.Instance?.ResetState();
         ClearBonus();
         ScheduleNextBonus();
@@ -229,7 +232,6 @@ public class GameManager : MonoBehaviour
 
         aiScore += points;
         GameplayUI.Instance?.ShowAIScore(aiScore);
-        //Debug.Log($"<color=red>[AI] Backboard basket +{points}</color>");
     }
 
     private void ScheduleNextBonus()

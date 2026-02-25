@@ -123,8 +123,8 @@ public class PowerBarUI : MonoBehaviour
             case AIDifficulty.Hard:
                 activeShuffleIntervalStart = 15;
                 activeShuffleIntervalMin = 4;
-                activePerfectSizeMin = 0.05f;
-                activeGoodSizeMin = 0.05f;
+                activePerfectSizeMin = 0.07f;
+                activeGoodSizeMin = 0.08f;
                 break;
         }
     }
