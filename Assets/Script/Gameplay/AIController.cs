@@ -66,6 +66,7 @@ public class AIController : MonoBehaviour
         basketDetector?.SetLastShotType(powerType);
         GameManager.Instance?.OnAIShotFired();
         ballShooter.ShootBall(basketTarget.position, aiBackboardTarget.position, powerType);
+        AudioManager.Instance?.PlayBallLaunch();
     }
 
     private ShotPowerType GetShotTypeForDifficulty()

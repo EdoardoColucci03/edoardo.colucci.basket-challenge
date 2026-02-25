@@ -48,12 +48,16 @@ public class BasketDetector : MonoBehaviour
         string shotType;
         int points;
 
+        bool fireballWasActive = FireballManager.Instance != null && FireballManager.Instance.IsFireballActive;
+
         if (lastShotType == ShotPowerType.Perfect)
         {
             shotType = "PERFECT SHOT!";
             points = 3;
             GameManager.Instance?.OnPerfectShot();
-            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, Color.green);
+            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, Color.green, fireballWasActive);
+            AudioManager.Instance?.PlayPerfectShot();
+            AudioManager.Instance?.PlayBallNet();
         }
         else if (hasHitBackboard)
         {
@@ -65,30 +69,37 @@ public class BasketDetector : MonoBehaviour
             points = 2 + bonusPoints;
 
             GameManager.Instance?.OnBackboardBasket();
-            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, bonusColor);
+            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, bonusColor, fireballWasActive);
+            if (bonusActive)
+                AudioManager.Instance?.PlayBonusBasket();
+            AudioManager.Instance?.PlayBallNet();
         }
         else
         {
             shotType = "BASKET!";
             points = 2;
             GameManager.Instance?.OnNormalBasket();
-            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, new Color(1f, 0.5f, 0f));
+            GameplayUI.Instance?.ShowScoreFlyer(points, shotType, new Color(1f, 0.5f, 0f), fireballWasActive);
+            AudioManager.Instance?.PlayBallNet();
         }
 
         Debug.Log($"<color=green>{shotType} +{points} points</color>");
         ResetShotState();
+        PlayerController.Instance?.ScheduleAutoReset(scored: true);
     }
 
     public void OnRimHit()
     {
         hasHitRim = true;
         cameraFollow?.StopBallCam();
+        AudioManager.Instance?.PlayBallRim();
     }
 
     public void OnBackboardHit()
     {
         hasHitBackboard = true;
         cameraFollow?.StopBallCam();
+        AudioManager.Instance?.PlayBallBackboard();
     }
 
     private void ResetShotState()

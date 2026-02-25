@@ -9,14 +9,29 @@ public class MainMenuUI : MonoBehaviour
 {
     [Header("UI Container")]
     [SerializeField] private Button playButton;
+    [SerializeField] private Button settingsButton;
+    [SerializeField] private Button exitButton;
+
     void Start()
     {
         playButton.onClick.AddListener(OnPlayButtonClicked);
+        settingsButton.onClick.AddListener(OnSettingsButtonClicked);
+        exitButton.onClick.AddListener(OnExitButtonClicked);
     }
 
     public void OnPlayButtonClicked()
     {
         SceneManager.LoadScene("ModeSelection");
+    }
+
+    public void OnSettingsButtonClicked()
+    {
+        SceneManager.LoadScene("Settings");
+    }
+
+    public void OnExitButtonClicked()
+    {
+        Application.Quit();
     }
 
 }

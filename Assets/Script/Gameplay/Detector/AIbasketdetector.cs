@@ -36,16 +36,22 @@ public class AIBasketDetector : MonoBehaviour
         {
             GameManager.Instance?.OnAIBasket(3);
             //Debug.Log("<color=red>[AI Basket] PERFECT +3</color>");
+            AudioManager.Instance?.PlayPerfectShot();
+            AudioManager.Instance?.PlayBallNet();
         }
         else if (lastShotType == ShotPowerType.Good)
         {
             GameManager.Instance?.OnAIBackboardBasket();
             //Debug.Log("<color=red>[AI Basket] BACKBOARD</color>");
+            if (GameManager.Instance != null && GameManager.Instance.IsBonusActive)
+                AudioManager.Instance?.PlayBonusBasket();
+            AudioManager.Instance?.PlayBallNet();
         }
         else
         {
             GameManager.Instance?.OnAIBasket(2);
             //Debug.Log("<color=red>[AI Basket] +2</color>");
+            AudioManager.Instance?.PlayBallNet();
         }
 
         lastShotType = ShotPowerType.None;

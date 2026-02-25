@@ -31,11 +31,34 @@ public class GameplayUI : MonoBehaviour
     [SerializeField] private float notificationDuration = 2f;
     [SerializeField] private float notificationFadeDuration = 0.5f;
 
+    [Header("Fireball UI")]
+    [SerializeField] private GameObject fireballContainer;
+    [SerializeField] private RectTransform fireballBarFill;
+    [SerializeField] private Image fireballBarFillImage;      
+    [SerializeField] private Image fireballEffectImage;       
+    [SerializeField] private GameObject fireballActiveEffect;
+    [SerializeField] private TextMeshProUGUI fireballActiveText;
+    [SerializeField] private float fireballPulseSpeed = 6f;
+
+    private readonly Color fillColorEmpty = new Color(1f, 0.85f, 0f, 1f);
+    private readonly Color fillColorMid = new Color(1f, 0.45f, 0f, 1f); 
+    private readonly Color fillColorFull = new Color(1f, 0.05f, 0f, 1f); 
+
+    private readonly Color effectColorDim = new Color(0.2f, 0.05f, 0f, 0.4f);
+    private readonly Color effectColorFull = new Color(1f, 0.05f, 0f, 1f);
+
     [Header("Pause")]
     [SerializeField] private GameObject pausePanel;
+    [SerializeField] private GameObject buttonContainer;
     [SerializeField] private Button pauseButton;
     [SerializeField] private Button backToGameButton;
     [SerializeField] private Button mainMenuButton;
+    [SerializeField] private Button restartButton;
+    [SerializeField] private Button audioSettingsButton;
+    [SerializeField] private GameObject audioSubPanel;
+    [SerializeField] private Slider musicSlider;        
+    [SerializeField] private Slider sfxSlider;          
+    [SerializeField] private Button audioBackButton;    
 
     private bool isPaused = false;
     private Coroutine flyerCoroutine;
@@ -52,9 +75,24 @@ public class GameplayUI : MonoBehaviour
         bonusNotificationText.gameObject.SetActive(false);
         pausePanel.SetActive(false);
 
+        if (fireballEffectImage != null)
+            fireballEffectImage.color = effectColorDim;
+        if (fireballBarFillImage != null)
+            fireballBarFillImage.color = fillColorEmpty;
+
         pauseButton.onClick.AddListener(OpenPause);
         backToGameButton.onClick.AddListener(ClosePause);
         mainMenuButton.onClick.AddListener(GoToMainMenu);
+        restartButton.onClick.AddListener(() =>
+        {
+            Time.timeScale = 1f;
+            GameManager.Instance?.PlayAgain();
+        });
+
+        audioSettingsButton.onClick.AddListener(OnAudioSettingsClicked);
+        audioBackButton.onClick.AddListener(OnAudioBackClicked);
+
+        SetupAudioSliders();
 
         bool isVsAI = GameManager.Instance != null &&
                       GameManager.Instance.CurrentGameMode == GameMode.VsAI;
@@ -73,6 +111,7 @@ public class GameplayUI : MonoBehaviour
             timerRect.pivot = aiRect.pivot;
             timerRect.anchoredPosition = aiRect.anchoredPosition;
         }
+
     }
 
     private void Update()
@@ -88,6 +127,7 @@ public class GameplayUI : MonoBehaviour
             UpdateTimerUI();
             UpdateScoreUI();
             UpdateBonusUI();
+            UpdateFireballUI();
         }
     }
 
@@ -154,16 +194,49 @@ public class GameplayUI : MonoBehaviour
         }
     }
 
+    private void UpdateFireballUI()
+    {
+        bool isActive = FireballManager.Instance != null && FireballManager.Instance.IsFireballActive;
+
+        // Testo pulsante
+        if (fireballActiveText != null)
+        {
+            fireballActiveText.gameObject.SetActive(isActive);
+            if (isActive)
+            {
+                float alpha = (Mathf.Sin(Time.time * fireballPulseSpeed) + 1f) / 2f;
+                fireballActiveText.color = new Color(1f, 0.4f, 0f, Mathf.Lerp(0.6f, 1f, alpha));
+                fireballActiveText.text = "FIREBALL MODE ACTIVE!";
+            }
+        }
+
+        if (isActive)
+        {
+            float pulse = (Mathf.Sin(Time.time * fireballPulseSpeed) + 1f) / 2f;
+
+            if (fireballEffectImage != null)
+                fireballEffectImage.color = Color.Lerp(effectColorFull * 0.6f, effectColorFull, pulse);
+
+            if (fireballBarFillImage != null)
+                fireballBarFillImage.color = Color.Lerp(fillColorFull * 0.6f, fillColorFull, pulse);
+        }
+    }
+
     public void ShowAIScore(int score)
     {
         if (aiScoreText != null)
             aiScoreText.text = $"ScoreAI: {score}";
     }
 
-    public void ShowScoreFlyer(int points, string label, Color color)
+    public void ShowScoreFlyer(int points, string label, Color color, bool fireballActive = false)
     {
+
+        int displayPoints = fireballActive ? points * 2 : points;
+        Color displayColor = fireballActive ? new Color(1f, 0.4f, 0f) : color;
+        string displayLabel = fireballActive ? $"FIREBALL! {label}" : label;
+
         if (flyerCoroutine != null) StopCoroutine(flyerCoroutine);
-        flyerCoroutine = StartCoroutine(FlyerRoutine(points, label, color));
+        flyerCoroutine = StartCoroutine(FlyerRoutine(displayPoints, displayLabel, displayColor));
     }
 
     private IEnumerator FlyerRoutine(int points, string label, Color color)
@@ -195,6 +268,68 @@ public class GameplayUI : MonoBehaviour
         notificationCoroutine = StartCoroutine(NotificationRoutine(message, color));
     }
 
+    public void UpdateFireballBar(int current, int total)
+    {
+        if (fireballBarFill == null) return;
+
+        bool isActive = FireballManager.Instance != null && FireballManager.Instance.IsFireballActive;
+        float normalized = isActive ? 1f : Mathf.Clamp01((float)current / total);
+
+        fireballBarFill.anchorMin = new Vector2(0, 0);
+        fireballBarFill.anchorMax = new Vector2(1, normalized);
+        fireballBarFill.offsetMin = Vector2.zero;
+        fireballBarFill.offsetMax = Vector2.zero;
+
+        if (fireballBarFillImage != null)
+        {
+            Color fillColor = normalized < 0.5f
+                ? Color.Lerp(fillColorEmpty, fillColorMid, normalized * 2f)
+                : Color.Lerp(fillColorMid, fillColorFull, (normalized - 0.5f) * 2f);
+            fireballBarFillImage.color = fillColor;
+        }
+
+        if (fireballEffectImage != null && !isActive)
+            fireballEffectImage.color = Color.Lerp(effectColorDim, effectColorFull * 0.6f, normalized);
+    }
+
+    public void ShowFireball(bool active)
+    {
+        if (active)
+        {
+            if (fireballBarFill != null)
+            {
+                fireballBarFill.anchorMin = new Vector2(0, 0);
+                fireballBarFill.anchorMax = new Vector2(1, 1);
+                fireballBarFill.offsetMin = Vector2.zero;
+                fireballBarFill.offsetMax = Vector2.zero;
+            }
+
+            if (fireballBarFillImage != null)
+                fireballBarFillImage.color = fillColorFull;
+        }
+        else
+        {
+            if (fireballBarFill != null)
+            {
+                fireballBarFill.anchorMin = new Vector2(0, 0);
+                fireballBarFill.anchorMax = new Vector2(1, 0);
+                fireballBarFill.offsetMin = Vector2.zero;
+                fireballBarFill.offsetMax = Vector2.zero;
+            }
+            if (fireballBarFillImage != null)
+                fireballBarFillImage.color = fillColorEmpty;
+            if (fireballEffectImage != null)
+                fireballEffectImage.color = effectColorDim;
+        }
+    }
+
+
+    public void UpdateScore(int score)
+    {
+        if (scoreText != null)
+            scoreText.text = $"Score: {score}";
+    }
+
     private IEnumerator NotificationRoutine(string message, Color color)
     {
         bonusNotificationText.gameObject.SetActive(true);
@@ -213,5 +348,50 @@ public class GameplayUI : MonoBehaviour
         }
 
         bonusNotificationText.gameObject.SetActive(false);
+    }
+
+    private void SetupAudioSliders()
+    {
+        musicSlider.minValue = 0f; musicSlider.maxValue = 1f; musicSlider.wholeNumbers = false;
+        sfxSlider.minValue = 0f; sfxSlider.maxValue = 1f; sfxSlider.wholeNumbers = false;
+
+        musicSlider.onValueChanged.AddListener(OnMusicSliderChanged);
+        sfxSlider.onValueChanged.AddListener(OnSFXSliderChanged);
+
+        LoadVolumes();
+    }
+
+    private void LoadVolumes()
+    {
+        float musicVol = Mathf.Round(AudioManager.Instance.musicVolume * 10f) / 10f;
+        float sfxVol = Mathf.Round(AudioManager.Instance.sfxVolume * 10f) / 10f;
+        musicSlider.value = musicVol;
+        sfxSlider.value = sfxVol;
+    }
+
+    private void OnMusicSliderChanged(float value)
+    {
+        float stepped = Mathf.Round(value * 10f) / 10f;
+        musicSlider.value = stepped;
+        AudioManager.Instance.SetMusicVolume(stepped);
+    }
+
+    private void OnSFXSliderChanged(float value)
+    {
+        float stepped = Mathf.Round(value * 10f) / 10f;
+        sfxSlider.value = stepped;
+        AudioManager.Instance.SetSFXVolume(stepped);
+    }
+
+    public void OnAudioSettingsClicked()
+    {
+        buttonContainer.SetActive(false);
+        audioSubPanel.SetActive(true);
+    }
+
+    public void OnAudioBackClicked()
+    {
+        audioSubPanel.SetActive(false);
+        buttonContainer.SetActive(true);
     }
 }

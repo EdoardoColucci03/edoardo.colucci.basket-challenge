@@ -6,12 +6,9 @@ using UnityEngine.EventSystems;
 public class SwipeInput : MonoBehaviour
 {
     [Header("Swipe Settings")]
-    [SerializeField] private float minSwipeDistance = 50f;
-    [SerializeField] private float maxSwipeDistance = 500f;
+    [SerializeField] private float minSwipeScreenPercent = 0.03f;
+    [SerializeField] private float maxSwipeScreenPercent = 0.4f;
     [SerializeField] private float swipeThreshold = 10f;
-
-    [Header("Mobile Adjustments")]
-    [SerializeField] private float mobileDistanceMultiplier = 1.5f;
 
     [Header("Swipe Behavior")]
     [SerializeField] private bool cancelOnDownwardMovement = true;
@@ -19,6 +16,9 @@ public class SwipeInput : MonoBehaviour
     [Header("Auto-Shoot Settings")]
     [SerializeField] private bool enableAutoShoot = true;
     [SerializeField] private float autoShootDelay = 1f;
+
+    private float minSwipeDistance;
+    private float maxSwipeDistance;
 
     private Vector2 startPosition;
     private Vector2 lastPosition;
@@ -31,6 +31,15 @@ public class SwipeInput : MonoBehaviour
     public bool IsSwipeActive => isSwiping;
     public bool ShouldAutoShoot { get; private set; }
 
+    private void Start()
+    {
+        float screenHeight = Screen.height;
+        minSwipeDistance = screenHeight * minSwipeScreenPercent;
+        maxSwipeDistance = screenHeight * maxSwipeScreenPercent;
+
+        Debug.Log($"[SwipeInput] Screen: {Screen.width}x{Screen.height} | DPI: {Screen.dpi} | MinSwipe: {minSwipeDistance:F0}px | MaxSwipe: {maxSwipeDistance:F0}px");
+    }
+
     private void Update()
     {
         HandleInput();
@@ -40,13 +49,9 @@ public class SwipeInput : MonoBehaviour
     private void HandleInput()
     {
         if (Application.isMobilePlatform)
-        {
             HandleTouchInput();
-        }
         else
-        {
             HandleMouseInput();
-        }
     }
 
     private void CheckAutoShoot()
@@ -59,7 +64,6 @@ public class SwipeInput : MonoBehaviour
         {
             hasAutoShot = true;
             ShouldAutoShoot = true;
-            Debug.Log($"<color=yellow>[SwipeDetector] Auto-shoot triggered after {elapsedTime:F1}s</color>");
         }
     }
 
@@ -69,6 +73,7 @@ public class SwipeInput : MonoBehaviour
         {
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
                 return;
+
             StartSwipe(Input.mousePosition);
         }
         else if (Input.GetMouseButton(0) && isSwiping)
@@ -84,35 +89,30 @@ public class SwipeInput : MonoBehaviour
 
     private void HandleTouchInput()
     {
-        if (Input.touchCount > 0)
+        if (Input.touchCount == 0) return;
+
+        Touch touch = Input.GetTouch(0);
+
+        switch (touch.phase)
         {
-            Touch touch = Input.GetTouch(0);
+            case TouchPhase.Began:
+                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+                    return;
+                StartSwipe(touch.position);
+                break;
 
-            switch (touch.phase)
-            {
-                case TouchPhase.Began:
-                    if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
-                        break;
-                    StartSwipe(touch.position);
-                    break;
+            case TouchPhase.Moved:
+            case TouchPhase.Stationary:
+                if (isSwiping)
+                    UpdateSwipe(touch.position);
+                break;
 
-                case TouchPhase.Moved:
-                case TouchPhase.Stationary:
-                    if (isSwiping)
-                    {
-                        UpdateSwipe(touch.position);
-                    }
-                    break;
-
-                case TouchPhase.Ended:
-                case TouchPhase.Canceled:
-                    if (isSwiping || isHolding)
-                    {
-                        EndSwipe(touch.position);
-                    }
-                    isHolding = false;
-                    break;
-            }
+            case TouchPhase.Ended:
+            case TouchPhase.Canceled:
+                if (isSwiping || isHolding)
+                    EndSwipe(lastPosition);
+                isHolding = false;
+                break;
         }
     }
 
@@ -144,9 +144,7 @@ public class SwipeInput : MonoBehaviour
         }
 
         float distance = CalculateSwipeDistance(currentPosition);
-        float adjustedMaxDistance = GetAdjustedMaxDistance();
-
-        SwipePower = Mathf.Clamp01(distance / adjustedMaxDistance);
+        SwipePower = Mathf.Clamp01(distance / maxSwipeDistance);
         lastPosition = currentPosition;
     }
 
@@ -161,16 +159,10 @@ public class SwipeInput : MonoBehaviour
         }
 
         float distance = CalculateSwipeDistance(endPosition);
-        float adjustedMaxDistance = GetAdjustedMaxDistance();
 
-        if (distance >= minSwipeDistance)
-        {
-            SwipePower = Mathf.Clamp01(distance / adjustedMaxDistance);
-        }
-        else
-        {
-            SwipePower = 0f;
-        }
+        SwipePower = distance >= minSwipeDistance
+            ? Mathf.Clamp01(distance / maxSwipeDistance)
+            : 0f;
 
         isSwiping = false;
         ShouldAutoShoot = false;
@@ -178,8 +170,7 @@ public class SwipeInput : MonoBehaviour
 
     private bool IsValidSwipeDirection(Vector2 currentPosition)
     {
-        float verticalDelta = currentPosition.y - startPosition.y;
-        return verticalDelta > swipeThreshold;
+        return (currentPosition.y - startPosition.y) > swipeThreshold;
     }
 
     private bool HasMovedDown(Vector2 currentPosition)
@@ -192,18 +183,10 @@ public class SwipeInput : MonoBehaviour
         return Vector2.Distance(startPosition, currentPosition);
     }
 
-    private float GetAdjustedMaxDistance()
-    {
-        if (Application.isMobilePlatform)
-        {
-            return maxSwipeDistance * mobileDistanceMultiplier;
-        }
-        return maxSwipeDistance;
-    }
-
     public void CancelSwipe()
     {
         isSwiping = false;
+        SwipePower = 0f;
     }
 
     public void ResetSwipe()

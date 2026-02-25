@@ -203,6 +203,8 @@ public class PlayerController : MonoBehaviour
 
         ballShooter.ShootBall(basketTarget.position, backboardTarget.position, powerType);
 
+        AudioManager.Instance?.PlayBallLaunch();
+
         if (basketballCamera != null)
         {
             basketballCamera.StartBallCam();
@@ -210,7 +212,7 @@ public class PlayerController : MonoBehaviour
 
         CleanupAfterShot();
 
-        //Debug.Log($"<color=orange>[PlayerController] Shot from {playerTransform.position} | Type: {powerType} | Swipe: {finalPower:F2}</color>");
+        Debug.Log($"<color=orange>[PlayerController] Shot from {playerTransform.position} | Type: {powerType} | Swipe: {finalPower:F2}</color>");
     }
 
     private void CancelShot()
@@ -226,23 +228,26 @@ public class PlayerController : MonoBehaviour
         if (showtrajectoryInRealtime) trajectoryVisualizer.HideTrajectory();
     }
 
-    public void ScheduleAutoReset()
+    public void ScheduleAutoReset(bool scored = false)
     {
         if (autoResetCoroutine == null)
         {
-            autoResetCoroutine = StartCoroutine(AutoResetRoutine());
+            autoResetCoroutine = StartCoroutine(AutoResetRoutine(scored));
         }
     }
 
-    private IEnumerator AutoResetRoutine()
+    private IEnumerator AutoResetRoutine(bool scored)
     {
         yield return new WaitForSeconds(autoResetDelay);
-        ResetShot();
+        ResetShot(scored);
     }
 
-    public void ResetShot()
+    public void ResetShot(bool scored = false)
     {
         IsBallInFlight = false;
+
+        if (!scored)
+            GameManager.Instance?.OnPlayerMiss();
 
         if (autoResetCoroutine != null)
         {

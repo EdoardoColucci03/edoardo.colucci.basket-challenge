@@ -340,18 +340,26 @@ public class PowerBarUI : MonoBehaviour
     {
         if (normalizedPower >= perfectZoneStart && normalizedPower <= perfectZoneEnd)
             return ShotPowerType.Perfect;
-        else if (IsNearPerfect(normalizedPower))
-            return ShotPowerType.NearPerfect;
-        else if (normalizedPower >= goodZoneStart && normalizedPower <= goodZoneEnd)
+
+        if (normalizedPower >= goodZoneStart && normalizedPower <= goodZoneEnd)
             return ShotPowerType.Good;
-        else if (IsNearGood(normalizedPower))
+
+        if (IsNearPerfect(normalizedPower))
+            return ShotPowerType.NearPerfect;
+
+        if (IsNearGood(normalizedPower))
             return ShotPowerType.NearGood;
-        else if (normalizedPower < perfectZoneStart - nearPerfectTolerance)
+
+        float lowerZoneBottom = Mathf.Min(perfectZoneStart, goodZoneStart);
+        float upperZoneTop = Mathf.Max(perfectZoneEnd, goodZoneEnd);
+
+        if (normalizedPower < lowerZoneBottom - nearPerfectTolerance)
             return ShotPowerType.Weak;
-        else if (normalizedPower > goodZoneEnd + nearGoodTolerance)
+
+        if (normalizedPower > upperZoneTop + nearGoodTolerance)
             return ShotPowerType.TooStrong;
-        else
-            return ShotPowerType.Normal;
+
+        return ShotPowerType.Normal;
     }
 
     private bool IsNearPerfect(float power)

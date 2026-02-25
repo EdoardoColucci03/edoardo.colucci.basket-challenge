@@ -79,9 +79,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void StartPractice()
+    public void StartPractice(float duration = 60f)
     {
         currentGameMode = GameMode.Practice;
+        gameDuration = duration;
         InitGame();
     }
 
@@ -89,6 +90,7 @@ public class GameManager : MonoBehaviour
     {
         currentGameMode = GameMode.VsAI;
         currentDifficulty = difficulty;
+        gameDuration = 120f;
         aiScore = 0;
         InitGame();
     }
@@ -101,6 +103,7 @@ public class GameManager : MonoBehaviour
         aiShotsFiredCount = 0;
         waitingForShotToFinish = false;
         isGameActive = true;
+        FireballManager.Instance?.ResetState();
         ClearBonus();
         ScheduleNextBonus();
         SceneManager.LoadScene("Gameplay");
@@ -125,7 +128,14 @@ public class GameManager : MonoBehaviour
         if (currentGameMode == GameMode.VsAI)
             StartVsAI(currentDifficulty);
         else
-            StartPractice();
+            StartPractice(gameDuration);
+    }
+
+    public void ReturnToModeSelection()
+    {
+        isGameActive = false;
+        ClearBonus();
+        SceneManager.LoadScene("ModeSelection");
     }
 
     public void OnShotFired()
@@ -158,11 +168,25 @@ public class GameManager : MonoBehaviour
     public void AddScore(int points)
     {
         if (!isGameActive) return;
-        totalScore += points;
+
+        int finalPoints = FireballManager.Instance != null
+            ? FireballManager.Instance.ApplyMultiplier(points)
+            : points;
+        totalScore += finalPoints;
+        GameplayUI.Instance?.UpdateScore(totalScore);
     }
 
-    public void OnPerfectShot() => AddScore(3);
-    public void OnNormalBasket() => AddScore(2);
+    public void OnPerfectShot()
+    {
+        AddScore(3);
+        FireballManager.Instance?.OnBasketScored();
+    }
+
+    public void OnNormalBasket()
+    {
+        AddScore(2);
+        FireballManager.Instance?.OnBasketScored();
+    }
 
     public void OnBackboardBasket()
     {
@@ -176,6 +200,12 @@ public class GameManager : MonoBehaviour
         {
             AddScore(2);
         }
+        FireballManager.Instance?.OnBasketScored();
+    }
+
+    public void OnPlayerMiss()
+    {
+        FireballManager.Instance?.OnMiss();
     }
 
     public void OnAIBasket(int points)
@@ -199,12 +229,14 @@ public class GameManager : MonoBehaviour
 
         aiScore += points;
         GameplayUI.Instance?.ShowAIScore(aiScore);
-        Debug.Log($"<color=red>[AI] Backboard basket! +{points}</color>");
+        //Debug.Log($"<color=red>[AI] Backboard basket +{points}</color>");
     }
 
     private void ScheduleNextBonus()
     {
-        int totalShots = currentGameMode == GameMode.VsAI ? shotsFiredCount + aiShotsFiredCount : shotsFiredCount;
+        int totalShots = currentGameMode == GameMode.VsAI
+            ? shotsFiredCount + aiShotsFiredCount
+            : shotsFiredCount;
 
         int interval = Random.Range(minShotsBeforeBonus, maxShotsBeforeBonus + 1);
         nextBonusAtShot = totalShots + interval;
@@ -223,6 +255,7 @@ public class GameManager : MonoBehaviour
         ScheduleNextBonus();
 
         GameplayUI.Instance?.ShowBonusNotification("BACKBOARD BONUS ACTIVE!", activeBonus.Color);
+        AudioManager.Instance?.PlayBonusActive();
 
         bonusExpireCoroutine = StartCoroutine(BonusExpireRoutine());
     }
@@ -251,6 +284,7 @@ public class GameManager : MonoBehaviour
     public float GetBonusTimeRemaining() => bonusTimeLeft;
     public int GetTotalScore() => totalScore;
     public int GetAIScore() => aiScore;
+    public float GetGameDuration() => gameDuration;
     public bool IsBonusActive => isBonusActive;
     public BackboardBonus ActiveBonus => activeBonus;
     public GameMode CurrentGameMode => currentGameMode;
